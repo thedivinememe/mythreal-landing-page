@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MythReal — A Classless Tabletop RPG | Build Your Legend</title>
+  <meta name="description" content="MythReal is a classless tabletop RPG featuring 20 Tech Trees, an Action Point combat system, and a multiverse setting. Download the free Quick-Start Rules and join the playtest.">
+  <meta property="og:title" content="MythReal — A Classless Tabletop RPG | Build Your Legend">
+  <meta property="og:description" content="MythReal is a classless tabletop RPG featuring 20 Tech Trees, an Action Point combat system, and a multiverse setting. Download the free Quick-Start Rules and join the playtest.">
+  <meta property="og:image" content="mythreal-logo-gold.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" href="mythreal-logo-small-gold.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+
+    :root {
+      --bg-dark: #0D0D0D;
+      --bg-mid: #1A1A1A;
+      --gold: #C5A55A;
+      --gold-dim: rgba(197, 165, 90, 0.15);
+      --gold-glow: rgba(197, 165, 90, 0.3);
+      --blue: #1B3A5C;
+      --text: #E8E0D0;
+      --text-bright: #FFFFFF;
+      --font-heading: 'Cinzel', serif;
+      --font-body: 'Raleway', sans-serif;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-dark);
+      color: var(--text);
+      line-height: 1.7;
+      font-weight: 400;
+      overflow-x: hidden;
+    }
+
+    /* Vignette overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Noise texture */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 256px 256px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    h1, h2, h3, h4 { font-family: var(--font-heading); color: var(--text-bright); font-weight: 600; }
+    a { color: var(--gold); text-decoration: none; transition: color 0.3s; }
+    a:hover { color: #dfc476; }
+    img { max-width: 100%; height: auto; display: block; }
+    section { position: relative; z-index: 1; }
+
+    /* ── Utility ── */
+    .container { width: 90%; max-width: 1100px; margin: 0 auto; }
+    .fade-in { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── Particle Canvas ── */
+    #particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    /* ── Navigation ── */
+    .site-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 0.75rem 0;
+      background: rgba(13, 13, 13, 0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(197, 165, 90, 0.08);
+      transition: background 0.3s, padding 0.3s;
+    }
+    .site-nav.scrolled {
+      background: rgba(13, 13, 13, 0.95);
+      padding: 0.5rem 0;
+    }
+    .nav-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 90%; max-width: 1100px; margin: 0 auto;
+    }
+    .nav-logo img { height: 40px; width: auto; }
+    .nav-links { display: flex; align-items: center; gap: 1.5rem; list-style: none; }
+    .nav-links a {
+      font-family: var(--font-heading); font-size: 0.8rem; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text); transition: color 0.3s;
+    }
+    .nav-links a:hover { color: var(--gold); }
+    .btn-cta {
+      display: inline-block; padding: 0.6rem 1.4rem;
+      background: var(--gold); color: var(--bg-dark);
+      font-family: var(--font-heading); font-size: 0.75rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      border: none; border-radius: 3px; cursor: pointer;
+      transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+    }
+    .btn-cta:hover {
+      background: #dfc476; color: var(--bg-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px var(--gold-glow);
+    }
+    .nav-toggle { display: none; background: none; border: none; cursor: pointer; padding: 0.5rem; }
+    .nav-toggle span { display: block; width: 24px; height: 2px; background: var(--text); margin: 5px 0; transition: transform 0.3s, opacity 0.3s; }
+
+    /* Mobile nav */
+    @media (max-width: 768px) {
+      .nav-toggle { display: block; }
+      .nav-links {
+        position: fixed; top: 0; right: -100%; width: 70%; max-width: 300px; height: 100vh;
+        flex-direction: column; justify-content: center; gap: 2rem;
+        background: rgba(13, 13, 13, 0.98); backdrop-filter: blur(12px);
+        transition: right 0.4s ease;
+      }
+      .nav-links.open { right: 0; }
+      .nav-links a { font-size: 1rem; }
+    }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      padding: 6rem 1.5rem 3rem;
+    }
+    .hero-logo { max-width: 420px; width: 80%; margin-bottom: 1.5rem; }
+    .hero-tagline {
+      font-family: var(--font-heading); font-size: clamp(1.1rem, 3vw, 1.6rem);
+      color: var(--gold); letter-spacing: 0.15em; text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .hero-subtitle {
+      max-width: 640px; font-size: clamp(0.9rem, 2vw, 1.05rem);
+      color: var(--text); line-height: 1.8; margin-bottom: 2.5rem;
+    }
+    .hero-buttons { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
+    .btn-outline {
+      display: inline-block; padding: 0.6rem 1.4rem;
+      border: 1.5px solid var(--gold); color: var(--gold);
+      font-family: var(--font-heading); font-size: 0.75rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; border-radius: 3px;
+      transition: background 0.3s, color 0.3s, transform 0.2s;
+    }
+    .btn-outline:hover {
+      background: var(--gold-dim); color: var(--gold);
+      transform: translateY(-1px);
+    }
+    .scroll-indicator {
+      margin-top: auto; padding-top: 2rem;
+      animation: scrollBounce 2s ease-in-out infinite;
+    }
+    .scroll-indicator svg { width: 28px; height: 28px; stroke: var(--gold); opacity: 0.5; }
+    @keyframes scrollBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(8px); }
+    }
+
+    /* ── Section Shared ── */
+    .section-padding { padding: 5rem 0; }
+    .section-heading {
+      text-align: center; margin-bottom: 3rem;
+    }
+    .section-heading h2 {
+      font-size: clamp(1.4rem, 3.5vw, 2rem); letter-spacing: 0.06em;
+      display: inline-block; position: relative; padding: 0 1rem;
+    }
+    .heading-rule {
+      display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 0.5rem;
+    }
+    .heading-rule::before, .heading-rule::after {
+      content: ''; flex: 0 0 60px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+    .heading-rule .diamond {
+      width: 8px; height: 8px; background: var(--gold);
+      transform: rotate(45deg); flex-shrink: 0;
+    }
+
+    /* ── Feature Cards ── */
+    .features-grid {
+      display: grid; grid-template-columns: 1fr; gap: 1.5rem;
+    }
+    @media (min-width: 768px) { .features-grid { grid-template-columns: repeat(3, 1fr); } }
+    .feature-card {
+      background: rgba(26, 26, 26, 0.6);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(197, 165, 90, 0.1);
+      border-top: 3px solid var(--gold);
+      border-radius: 4px; padding: 2rem 1.5rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(197, 165, 90, 0.1);
+    }
+    .feature-icon {
+      width: 48px; height: 48px; margin-bottom: 1.2rem;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gold); font-size: 1.8rem;
+    }
+    .feature-card h3 {
+      font-size: 1.05rem; margin-bottom: 0.8rem; color: var(--gold);
+      letter-spacing: 0.04em;
+    }
+    .feature-card p { font-size: 0.9rem; line-height: 1.8; color: var(--text); }
+
+    /* ── World Section ── */
+    .world-section {
+      background: linear-gradient(180deg, var(--bg-dark) 0%, rgba(27, 58, 92, 0.12) 50%, var(--bg-dark) 100%);
+    }
+    .world-text {
+      max-width: 780px; margin: 0 auto 3rem; text-align: center;
+      font-size: clamp(0.9rem, 2vw, 1.05rem); line-height: 1.9;
+      font-style: italic; color: var(--text);
+    }
+    .ancestry-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem;
+    }
+    @media (min-width: 768px) { .ancestry-grid { grid-template-columns: repeat(4, 1fr); } }
+    .ancestry-badge {
+      text-align: center; padding: 1.5rem 1rem;
+      background: rgba(13, 13, 13, 0.5); border: 1px solid rgba(197, 165, 90, 0.12);
+      border-radius: 4px; transition: border-color 0.3s;
+    }
+    .ancestry-badge:hover { border-color: var(--gold-glow); }
+    .ancestry-icon {
+      width: 56px; height: 56px; margin: 0 auto 0.8rem;
+      border: 2px solid var(--gold); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; color: var(--gold);
+    }
+    .ancestry-badge h4 { font-size: 0.95rem; margin-bottom: 0.4rem; color: var(--gold); }
+    .ancestry-badge p { font-size: 0.78rem; line-height: 1.6; }
+
+    /* ── Stats ── */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;
+      text-align: center;
+    }
+    @media (min-width: 768px) { .stats-row { grid-template-columns: repeat(4, 1fr); } }
+    .stat-item .stat-number {
+      font-family: var(--font-heading); font-size: clamp(2.5rem, 6vw, 3.5rem);
+      color: var(--gold); font-weight: 700; line-height: 1;
+      margin-bottom: 0.3rem;
+    }
+    .stat-item .stat-label {
+      font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--text);
+    }
+
+    /* ── Signup ── */
+    .signup-section {
+      background: linear-gradient(180deg, var(--bg-dark) 0%, rgba(27, 58, 92, 0.15) 50%, var(--bg-dark) 100%);
+      text-align: center;
+    }
+    .signup-section h2 { font-size: clamp(1.6rem, 4vw, 2.2rem); margin-bottom: 1rem; }
+    .signup-section .signup-sub {
+      max-width: 560px; margin: 0 auto 2rem; font-size: 0.95rem; line-height: 1.8;
+    }
+    .signup-form {
+      display: flex; flex-wrap: wrap; gap: 0.75rem;
+      justify-content: center; max-width: 500px; margin: 0 auto 1rem;
+    }
+    .signup-form input[type="email"] {
+      flex: 1 1 250px; padding: 0.75rem 1rem;
+      background: rgba(26, 26, 26, 0.8); border: 1px solid rgba(197, 165, 90, 0.25);
+      border-radius: 3px; color: var(--text); font-family: var(--font-body); font-size: 0.9rem;
+      outline: none; transition: border-color 0.3s;
+    }
+    .signup-form input[type="email"]::placeholder { color: rgba(232, 224, 208, 0.4); }
+    .signup-form input[type="email"]:focus { border-color: var(--gold); }
+    .signup-form button { flex-shrink: 0; }
+    .signup-count { font-size: 0.85rem; color: rgba(232, 224, 208, 0.6); margin-bottom: 1.5rem; }
+    .discord-link {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.9rem; color: var(--gold);
+    }
+    .discord-link svg { width: 20px; height: 20px; fill: currentColor; }
+
+    /* ── Footer ── */
+    .site-footer {
+      position: relative; z-index: 1;
+      padding: 3rem 0 1.5rem;
+      border-top: 1px solid rgba(197, 165, 90, 0.1);
+      text-align: center;
+    }
+    .footer-logo img { height: 40px; width: auto; margin: 0 auto 1.2rem; object-fit: contain; }
+    .footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.2rem; margin-bottom: 1.2rem; }
+    .footer-links a { font-size: 0.8rem; color: var(--text); text-transform: uppercase; letter-spacing: 0.06em; }
+    .footer-links a:hover { color: var(--gold); }
+    .social-icons { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1.2rem; }
+    .social-icons a {
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(197, 165, 90, 0.2); border-radius: 50%;
+      color: var(--text); transition: border-color 0.3s, color 0.3s;
+    }
+    .social-icons a:hover { border-color: var(--gold); color: var(--gold); }
+    .social-icons svg { width: 16px; height: 16px; fill: currentColor; }
+    .footer-copy { font-size: 0.75rem; color: rgba(232, 224, 208, 0.4); line-height: 1.8; }
+  </style>
+</head>
+<body>
+
+  <!-- Particle Canvas -->
+  <canvas id="particles" aria-hidden="true"></canvas>
+
+  <!-- Navigation -->
+  <header class="site-nav" role="banner">
+    <nav class="nav-inner" aria-label="Main navigation">
+      <a href="#" class="nav-logo" aria-label="MythReal home">
+        <img src="mythreal-logo-small-gold.png" alt="MythReal" width="292" height="231">
+      </a>
+      <ul class="nav-links" id="navLinks" role="menubar">
+        <li role="none"><a href="#about" role="menuitem">About</a></li>
+        <li role="none"><a href="#features" role="menuitem">Features</a></li>
+        <li role="none"><a href="#world" role="menuitem">The World</a></li>
+        <li role="none"><a href="#signup" role="menuitem">Join</a></li>
+        <li role="none"><a href="MythReal_QuickStart_Rules.pdf" class="btn-cta" role="menuitem" download>Get the Quick-Start Rules</a></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero" id="hero">
+      <img src="mythreal-logo-gold.png" alt="MythReal logo" class="hero-logo" width="881" height="467">
+      <p class="hero-tagline">Where Myth Bleeds Into Reality</p>
+      <p class="hero-subtitle">A classless tabletop RPG with infinite character builds, a unique Action Point combat system, and a multiverse where every legend has a grain of truth.</p>
+      <div class="hero-buttons">
+        <a href="MythReal_QuickStart_Rules.pdf" class="btn-cta" download>Download Quick-Start Rules</a>
+        <a href="Weekend_at_Burnys_v2_2.pdf" class="btn-cta" download>Download Alpha Campaign</a>
+        <a href="#signup" class="btn-outline">Join the Community</a>
+      </div>
+      <div class="scroll-indicator" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section-padding" id="features">
+      <div class="container">
+        <div class="section-heading fade-in" id="about">
+          <div class="heading-rule"><div class="diamond"></div></div>
+          <h2>What Makes MythReal Different</h2>
+        </div>
+        <div class="features-grid">
+          <article class="feature-card fade-in">
+            <div class="feature-icon" aria-hidden="true">
+              <!-- Branching tree icon -->
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <line x1="24" y1="42" x2="24" y2="18"/>
+                <line x1="24" y1="30" x2="14" y2="20"/>
+                <line x1="24" y1="30" x2="34" y2="20"/>
+                <line x1="14" y1="20" x2="8" y2="12"/>
+                <line x1="14" y1="20" x2="18" y2="10"/>
+                <line x1="34" y1="20" x2="30" y2="10"/>
+                <line x1="34" y1="20" x2="40" y2="12"/>
+                <line x1="24" y1="18" x2="24" y2="8"/>
+                <circle cx="8" cy="12" r="3" fill="currentColor"/>
+                <circle cx="18" cy="10" r="3" fill="currentColor"/>
+                <circle cx="24" cy="8" r="3" fill="currentColor"/>
+                <circle cx="30" cy="10" r="3" fill="currentColor"/>
+                <circle cx="40" cy="12" r="3" fill="currentColor"/>
+              </svg>
+            </div>
+            <h3>No Classes. No Limits.</h3>
+            <p>Forget picking a class. MythReal uses 20 Tech Trees — from Martial Arts to Summoning to Blood Magic — letting you build exactly the character you imagine. Mix a fire mage with a dual-wielding rogue. Combine hunting skills with arcane mastery. Your build, your rules.</p>
+          </article>
+          <article class="feature-card fade-in">
+            <div class="feature-icon" aria-hidden="true">
+              <!-- Lightning bolt icon -->
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="currentColor">
+                <polygon points="28,4 12,26 22,26 18,44 36,20 26,20"/>
+              </svg>
+            </div>
+            <h3>Action Points Change Everything</h3>
+            <p>Every turn you get 5 Action Points to spend however you want — move, attack, cast, or save them for next round. No more "I attack and end my turn." Every decision matters. Bank AP for a devastating combo, or spread your actions across movement and multiple strikes.</p>
+          </article>
+          <article class="feature-card fade-in">
+            <div class="feature-icon" aria-hidden="true">
+              <!-- Portal / overlapping worlds icon -->
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="20" cy="24" r="14"/>
+                <circle cx="30" cy="24" r="14"/>
+                <ellipse cx="25" cy="24" rx="4" ry="12" fill="currentColor" opacity="0.3"/>
+              </svg>
+            </div>
+            <h3>A Multiverse of Stories</h3>
+            <p>Dragons soar through futuristic cities. Wizards and AI crack ancient mysteries together. MythReal's Mythoverse is a multiverse where mythology, sci-fi, horror, and fantasy collide. Five known worlds. Infinite adventures.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- The World -->
+    <section class="section-padding world-section" id="world">
+      <div class="container">
+        <div class="section-heading fade-in">
+          <div class="heading-rule"><div class="diamond"></div></div>
+          <h2>The World of Yanala</h2>
+        </div>
+        <p class="world-text fade-in">For thousands of years, Dragonkind ruled from above. The Elder Dragons led their clans with iron will and ancient magic. But when the Elders began to die, the oppressed Unter races — humans, elves, orcs — seized their chance. Now the continent of Elderlind stands divided: the New Unter Alliance in the West, the remnants of Dragonkind in the East, and a mystery that could unite or destroy them all.</p>
+        <div class="ancestry-grid">
+          <div class="ancestry-badge fade-in">
+            <div class="ancestry-icon" aria-hidden="true">
+              <!-- Human: shield/person -->
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="12" cy="7" r="4"/><path d="M5.5 21v-2a5.5 5.5 0 0 1 13 0v2"/>
+              </svg>
+            </div>
+            <h4>Human</h4>
+            <p>Adaptable. Ambitious. Two attribute boosts of your choice.</p>
+          </div>
+          <div class="ancestry-badge fade-in">
+            <div class="ancestry-icon" aria-hidden="true">
+              <!-- Elf: leaf/star -->
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2C6 8 4 14 4 20c4-1 8-2 8-2s4 1 8 2c0-6-2-12-8-18z"/>
+                <line x1="12" y1="10" x2="12" y2="20"/>
+              </svg>
+            </div>
+            <h4>Elf</h4>
+            <p>Ancient. Graceful. Bonuses to Coordination, Intelligence, and Faith.</p>
+          </div>
+          <div class="ancestry-badge fade-in">
+            <div class="ancestry-icon" aria-hidden="true">
+              <!-- Orc: fist/axe -->
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 18L18 6"/>
+                <path d="M18 6l-4 1 3 3z"/>
+                <path d="M6 18l4-1-3-3z"/>
+              </svg>
+            </div>
+            <h4>Orc</h4>
+            <p>Powerful. Resilient. Bonuses to Strength and Fortitude.</p>
+          </div>
+          <div class="ancestry-badge fade-in">
+            <div class="ancestry-icon" aria-hidden="true">
+              <!-- Drake: dragon wing -->
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 20C4 20 8 16 10 10C12 4 20 2 20 2C20 2 18 8 16 12C14 16 8 20 4 20Z"/>
+                <path d="M10 10L16 12"/>
+                <path d="M12 6L14 14"/>
+              </svg>
+            </div>
+            <h4>Drake</h4>
+            <p>Draconic heritage. Bonuses to Strength and Wits.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="section-padding" id="stats">
+      <div class="container">
+        <div class="stats-row">
+          <div class="stat-item fade-in">
+            <div class="stat-number" data-target="20">0</div>
+            <div class="stat-label">Tech Trees</div>
+          </div>
+          <div class="stat-item fade-in">
+            <div class="stat-number" data-target="4">0</div>
+            <div class="stat-label">Playable Ancestries</div>
+          </div>
+          <div class="stat-item fade-in">
+            <div class="stat-number" data-target="26">0</div>
+            <div class="stat-label">Character Backgrounds</div>
+          </div>
+          <div class="stat-item fade-in">
+            <div class="stat-number" data-infinity="true">&infin;</div>
+            <div class="stat-label">Possible Character Builds</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Signup -->
+    <section class="section-padding signup-section" id="signup">
+      <div class="container">
+        <div class="fade-in">
+          <h2>Be the First to Play</h2>
+          <p class="signup-sub">Sign up to get the free Quick-Start Rules PDF, playtest invites, and a front-row seat to our Kickstarter launch.</p>
+          <form class="signup-form" name="signup" method="POST" data-netlify="true" action="/success.html">
+            <input type="hidden" name="form-name" value="signup">
+            <label for="email-input" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Email address</label>
+            <input type="email" id="email-input" name="email" placeholder="Enter your email address" required autocomplete="email">
+            <button type="submit" class="btn-cta">Join the Adventure</button>
+          </form>
+          <p class="signup-count">Be among the first adventurers to join</p>
+          <a href="https://discord.gg/568hYz7g" class="discord-link" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286z"/></svg>
+            Or join us on Discord &rarr;
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-logo">
+        <img src="mythreal-logo-small-gold.png" alt="MythReal">
+      </div>
+      <nav class="footer-links" aria-label="Footer navigation">
+        <a href="#about">About</a>
+        <a href="#">Community</a>
+        <a href="#">Contact</a>
+        <a href="#">Press Kit</a>
+      </nav>
+      <div class="social-icons">
+        <a href="https://x.com/MythRealRPG" aria-label="Twitter / X" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+        <a href="https://discord.gg/568hYz7g" aria-label="Discord" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286z"/></svg>
+        </a>
+        <a href="https://www.reddit.com/r/MythRealRPG/" aria-label="Reddit" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M12 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 01-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 01.042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 014.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 01.14-.197.35.35 0 01.238-.042l2.906.617a1.214 1.214 0 011.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 00-.231.094.33.33 0 000 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 000-.462.342.342 0 00-.462 0c-.545.533-1.684.73-2.512.73-.828 0-1.953-.21-2.499-.744a.326.326 0 00-.218-.08z"/></svg>
+        </a>
+        <a href="https://www.instagram.com/MythRealRPG/" aria-label="Instagram" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+        </a>
+      </div>
+      <p class="footer-copy">
+        &copy; 2026 MythReal, Inc. All rights reserved.<br>
+        MythReal is currently in alpha. Join the playtest!
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    /* ── Config ── */
+    const PARTICLES_ENABLED = true;
+    const PARTICLE_COUNT = 40;
+
+    /* ── Mobile Nav Toggle ── */
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+    navToggle.addEventListener('click', () => {
+      const open = navLinks.classList.toggle('open');
+      navToggle.setAttribute('aria-expanded', open);
+    });
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        navLinks.classList.remove('open');
+        navToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    /* ── Nav scroll effect ── */
+    const nav = document.querySelector('.site-nav');
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 60);
+    }, { passive: true });
+
+    /* ── Intersection Observer for fade-in ── */
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const fadeEls = document.querySelectorAll('.fade-in');
+    if (prefersReduced) {
+      fadeEls.forEach(el => el.classList.add('visible'));
+    } else {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      fadeEls.forEach(el => observer.observe(el));
+    }
+
+    /* ── Count-up animation for stats ── */
+    const statNumbers = document.querySelectorAll('.stat-number[data-target]');
+    const statsObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target;
+          const target = parseInt(el.dataset.target);
+          const duration = 1500;
+          const start = performance.now();
+          function update(now) {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            el.textContent = Math.round(target * eased);
+            if (progress < 1) requestAnimationFrame(update);
+          }
+          if (!prefersReduced) {
+            requestAnimationFrame(update);
+          } else {
+            el.textContent = target;
+          }
+          statsObserver.unobserve(el);
+        }
+      });
+    }, { threshold: 0.5 });
+    statNumbers.forEach(el => statsObserver.observe(el));
+
+    /* ── Particle Effect (floating embers) ── */
+    if (PARTICLES_ENABLED && !prefersReduced) {
+      const canvas = document.getElementById('particles');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      let w, h;
+
+      function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize, { passive: true });
+
+      function createParticle() {
+        return {
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: Math.random() * 1.5 + 0.5,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: -(Math.random() * 0.4 + 0.1),
+          alpha: Math.random() * 0.5 + 0.1,
+          life: Math.random() * 200 + 100,
+          age: 0
+        };
+      }
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const p = createParticle();
+        p.age = Math.random() * p.life;
+        particles.push(p);
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, w, h);
+        particles.forEach((p, i) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.age++;
+          const lifeRatio = 1 - p.age / p.life;
+          const alpha = p.alpha * lifeRatio;
+          if (p.age >= p.life || p.y < -10) {
+            particles[i] = createParticle();
+            particles[i].y = h + 10;
+            return;
+          }
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(197, 165, 90, ${alpha})`;
+          ctx.fill();
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+    }
+  </script>
+</body>
+</html>
