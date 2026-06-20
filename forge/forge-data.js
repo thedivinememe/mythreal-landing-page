@@ -496,6 +496,6 @@
     POINTS_AT_LEVEL_1: 2,
     POINTS_PER_LEVEL: 1,
     MAX_LEVEL: 5,
-    NODE_COST: { d1: 1, d3: 1, d5: 1 },
+    NODE_COST: { d1: 1, d2: 1, d3: 1, d4: 1, d5: 1 },
   };
 })();

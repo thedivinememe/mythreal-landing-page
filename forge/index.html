@@ -308,6 +308,24 @@
     .tree-svg .node.spike.unlocked .node-circle {
       filter: drop-shadow(0 0 12px var(--gold-glow));
     }
+    /* Mid-tier (L2/L4) — smaller than feature nodes but fully investable */
+    .tree-svg .node.mid { cursor: pointer; }
+    .tree-svg .node.mid .node-circle { stroke-width: 1.5; }
+    .tree-svg .node.mid.locked .node-circle { stroke: rgba(197, 165, 90, 0.3); }
+    .tree-svg .node.mid.available .node-circle { stroke: var(--gold); stroke-width: 2; }
+    .tree-svg .node.mid.unlocked .node-circle {
+      fill: rgba(197, 165, 90, 0.18);
+      stroke: var(--gold); stroke-width: 2;
+      filter: drop-shadow(0 0 4px var(--gold-glow));
+    }
+    .tree-svg .mid-label {
+      font-family: var(--font-heading); font-size: 9px;
+      fill: var(--text); pointer-events: none;
+      text-anchor: middle;
+      letter-spacing: 0.05em;
+    }
+    .tree-svg .node.mid.unlocked .mid-label { fill: var(--gold); }
+    .tree-svg .node.mid.locked .mid-label { fill: var(--text-dim); }
     @keyframes nodePop {
       0% { transform: scale(1); }
       40% { transform: scale(1.4); }
@@ -1119,9 +1137,9 @@
     function totalSpend() {
       let sum = 0;
       Object.entries(state.invested).forEach(([code, depth]) => {
-        if (depth >= 1) sum += D.NODE_COST.d1;
-        if (depth >= 3) sum += D.NODE_COST.d3;
-        if (depth >= 5) sum += D.NODE_COST.d5;
+        for (let d = 1; d <= depth && d <= 5; d++) {
+          sum += D.NODE_COST['d'+d] || 0;
+        }
       });
       return sum;
     }
@@ -1131,12 +1149,20 @@
     }
 
     // ─── Tree graph: build SVG ───
+    // L1/L3/L5 are feature unlocks (1 pt each, clickable).
+    // L2/L4 are intermediate ability-access tiers — smaller, non-clickable,
+    // auto-unlock when the next feature is invested (canonically the L3 feature
+    // grants L2-L3 ability access; the L5 feature grants L4-L5 ability access).
     const GRAPH = {
       cx: 600, cy: 600,
       hubR: 70,
-      ringR: { 1: 200, 3: 340, 5: 470 },
+      ringR: { 1: 180, 2: 250, 3: 320, 4: 390, 5: 460 },
       nodeR: 28,
+      midNodeR: 18,
     };
+    const FEATURE_DEPTHS = [1, 3, 5];
+    const MID_DEPTHS = [2, 4];
+    const ALL_DEPTHS = [1, 2, 3, 4, 5];
 
     // Position each tree at an angle around the hub
     function treeLayout() {
@@ -1157,17 +1183,12 @@
       const ns = 'http://www.w3.org/2000/svg';
       const positions = treeLayout();
 
-      // Edges first (so nodes draw on top)
+      // Edges first (so nodes draw on top). Chain hub→L1→L2→L3→L4→L5.
+      const pointAt = (angle, r) => [GRAPH.cx + Math.cos(angle) * r, GRAPH.cy + Math.sin(angle) * r];
       positions.forEach((p) => {
         if (p.tree.stub) return;
-        const x1 = GRAPH.cx + Math.cos(p.angle) * GRAPH.hubR;
-        const y1 = GRAPH.cy + Math.sin(p.angle) * GRAPH.hubR;
-        const xd1 = GRAPH.cx + Math.cos(p.angle) * GRAPH.ringR[1];
-        const yd1 = GRAPH.cy + Math.sin(p.angle) * GRAPH.ringR[1];
-        const xd3 = GRAPH.cx + Math.cos(p.angle) * GRAPH.ringR[3];
-        const yd3 = GRAPH.cy + Math.sin(p.angle) * GRAPH.ringR[3];
-        const xd5 = GRAPH.cx + Math.cos(p.angle) * GRAPH.ringR[5];
-        const yd5 = GRAPH.cy + Math.sin(p.angle) * GRAPH.ringR[5];
+        const hubPt = pointAt(p.angle, GRAPH.hubR);
+        const pts = ALL_DEPTHS.map(d => pointAt(p.angle, GRAPH.ringR[d]));
 
         const mkEdge = (x1, y1, x2, y2, depthFrom, depthTo) => {
           const line = document.createElementNS(ns, 'line');
@@ -1179,9 +1200,10 @@
           line.dataset.depthTo = depthTo;
           svg.appendChild(line);
         };
-        mkEdge(x1, y1, xd1, yd1, 0, 1);
-        mkEdge(xd1, yd1, xd3, yd3, 1, 3);
-        mkEdge(xd3, yd3, xd5, yd5, 3, 5);
+        mkEdge(hubPt[0], hubPt[1], pts[0][0], pts[0][1], 0, 1);
+        for (let i = 0; i < pts.length - 1; i++) {
+          mkEdge(pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1], ALL_DEPTHS[i], ALL_DEPTHS[i+1]);
+        }
       });
 
       // Stub edges (just to D1 node)
@@ -1202,7 +1224,7 @@
 
       // Nodes
       positions.forEach((p) => {
-        const drawNode = (depth) => {
+        const drawFeatureNode = (depth) => {
           if (p.tree.stub && depth > 1) return;
           const r = GRAPH.ringR[depth];
           const nx = GRAPH.cx + Math.cos(p.angle) * r;
@@ -1236,9 +1258,42 @@
           svg.appendChild(g);
           attachNodeHandlers(g, p.tree, depth);
         };
-        drawNode(1);
-        drawNode(3);
-        drawNode(5);
+        const drawMidNode = (depth) => {
+          if (p.tree.stub) return;
+          const r = GRAPH.ringR[depth];
+          const nx = GRAPH.cx + Math.cos(p.angle) * r;
+          const ny = GRAPH.cy + Math.sin(p.angle) * r;
+          const g = document.createElementNS(ns, 'g');
+          g.setAttribute('class', `node mid depth-${depth}`);
+          g.setAttribute('transform', `translate(${nx} ${ny})`);
+          g.dataset.tree = p.tree.code;
+          g.dataset.depth = depth;
+          g.setAttribute('role', 'img');
+          g.setAttribute('aria-label', `${p.tree.name} — L${depth} ability access`);
+          const circle = document.createElementNS(ns, 'circle');
+          circle.setAttribute('class', 'node-circle');
+          circle.setAttribute('r', GRAPH.midNodeR);
+          g.appendChild(circle);
+          const label = document.createElementNS(ns, 'text');
+          label.setAttribute('class', 'mid-label');
+          label.setAttribute('y', 3);
+          label.textContent = 'L' + depth;
+          g.appendChild(label);
+          const cost = document.createElementNS(ns, 'text');
+          cost.setAttribute('class', 'node-cost');
+          cost.setAttribute('y', GRAPH.midNodeR + 12);
+          cost.textContent = '1 pt';
+          g.appendChild(cost);
+          // Make mid-nodes focusable for keyboard
+          g.setAttribute('tabindex', '0');
+          svg.appendChild(g);
+          attachNodeHandlers(g, p.tree, depth);
+        };
+        drawFeatureNode(1);
+        drawMidNode(2);
+        drawFeatureNode(3);
+        drawMidNode(4);
+        drawFeatureNode(5);
       });
 
       // Hub (rendered last so it sits on top of edge endpoints)
@@ -1266,8 +1321,7 @@
 
     function attachNodeHandlers(g, tree, depth) {
       const onActivate = (e) => {
-        if (tree.stub || !tree['d'+depth]) {
-          // Show tooltip for stubs
+        if (tree.stub) {
           showTooltip(g, tree, depth, e);
           return;
         }
@@ -1290,13 +1344,12 @@
       const current = state.invested[tree.code] || 0;
       if (current >= depth) {
         // Refund this depth and everything beyond
-        if (depth === 1) delete state.invested[tree.code];
-        else if (depth === 3) state.invested[tree.code] = 1;
-        else if (depth === 5) state.invested[tree.code] = 3;
+        const newDepth = depth - 1;
+        if (newDepth <= 0) delete state.invested[tree.code];
+        else state.invested[tree.code] = newDepth;
       } else {
-        // Can only invest if previous depth purchased (D3 needs D1, D5 needs D3)
-        if (depth === 3 && current < 1) return;
-        if (depth === 5 && current < 3) return;
+        // Each tier requires the previous tier purchased (1→2→3→4→5)
+        if (depth > 1 && current < depth - 1) return;
         state.invested[tree.code] = depth;
         state.lastUnlocked = { tree: tree.code, depth };
       }
@@ -1324,13 +1377,13 @@
             g.classList.add('pop');
             setTimeout(() => g.classList.remove('pop'), 700);
           }
-        } else if ((depth === 1) || (depth === 3 && invested >= 1) || (depth === 5 && invested >= 3)) {
+        } else if (depth === 1 || invested >= depth - 1) {
           g.classList.add('available');
         } else {
           g.classList.add('locked');
         }
       });
-      // Edges
+      // Edges — each segment unlocks when its endpoint depth has been invested.
       svg.querySelectorAll('.edge').forEach((edge) => {
         const code = edge.dataset.tree;
         const dt = +edge.dataset.depthTo;
@@ -1353,7 +1406,36 @@
       const cy = nodeRect.top - wrapRect.top;
 
       let html = '';
-      const tierLabel = depth === 1 ? 'Tier I · Foundation' : (depth === 3 ? 'Tier III · Specialty' : 'Tier V · Mastery');
+      const tierLabel = depth === 1 ? 'Tier I · Foundation'
+        : (depth === 2 ? 'Tier II · Ability Access'
+        : (depth === 3 ? 'Tier III · Specialty'
+        : (depth === 4 ? 'Tier IV · Ability Access'
+        : 'Tier V · Mastery')));
+      if (depth === 2 || depth === 4) {
+        const prevTier = depth === 2 ? 'Tier I' : 'Tier III';
+        const talents = (window.FORGE_TALENTS && window.FORGE_TALENTS[tree.code] && window.FORGE_TALENTS[tree.code][depth]) || [];
+        const talentNames = talents.map(t => t.name).join(', ') || 'none in this tree';
+        html = `
+          <div class="tip-tree">${tree.code} · ${D.TREE_GROUPS[tree.group].label} tree</div>
+          <h4>L${depth} Ability Tier</h4>
+          <div class="tip-meta">${tierLabel} · 1 pt · requires ${prevTier}</div>
+          <div class="tip-desc">Unlocks the L${depth} talent pick and L${depth} ability access in this tree. Bridges between the named feature tiers.</div>
+          <div class="tip-voice">L${depth} talents: ${talentNames}</div>
+        `;
+        tip.innerHTML = html;
+        // Position (early return to reuse positioning below)
+        tip.style.left = '0px'; tip.style.top = '0px';
+        const tipRect = tip.getBoundingClientRect();
+        let x = cx - tipRect.width / 2;
+        let y = cy - tipRect.height - 12;
+        x = Math.max(8, Math.min(x, wrapRect.width - tipRect.width - 8));
+        if (y < 8) y = cy + nodeRect.height + 12;
+        tip.style.left = x + 'px';
+        tip.style.top = y + 'px';
+        tip.classList.add('show');
+        tip.setAttribute('aria-hidden', 'false');
+        return;
+      }
       if (tree.stub) {
         html = `
           <div class="tip-tree">${tree.code} · ${D.TREE_GROUPS[tree.group].label} tree</div>

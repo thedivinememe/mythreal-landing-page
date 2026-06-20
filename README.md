@@ -79,19 +79,21 @@ The `voice` field on each feature shows in the tooltip as an italic flavor line 
 
 ## Forge build economy
 
-Mirrors the Quick-Start v0.5.2 canonical rules. Each tier costs **1 Tech Point**, and your point budget scales with character level:
+Each tree has **5 tiers** (L1–L5), each costing **1 Tech Point**. L1/L3/L5 are named feature unlocks (Foundation, Specialty, Mastery); L2/L4 are intermediate ability-tier nodes that bridge between the features and unlock the L2/L4 talent picks. Every tier requires the previous tier in the same tree. Fully spec'd single tree = 5 pts.
+
+Your point budget scales with character level:
 
 | Level | Tech Points | What's reachable                                              |
 |-------|-------------|---------------------------------------------------------------|
-| 1     | 2           | D1+D3 in one tree (depth 2), OR D1 in two different trees     |
-| 2     | 3           | Full single-tree path D1+D3+D5 (Mastery spike unlocked)       |
-| 3     | 4           | Full tree + one splash D1                                     |
-| 4     | 5           | Full tree + two splash D1s                                    |
-| 5     | 6           | Full tree + three splash D1s                                  |
+| 1     | 2           | D1+D2 in one tree, OR D1 in two different trees               |
+| 2     | 3           | D1+D2+D3 in one tree (Specialty), OR splits                   |
+| 3     | 4           | D1+D2+D3+D4 in one tree, OR 1 full + splash                   |
+| 4     | 5           | Full single-tree D1–D5 path (Mastery spike unlocked)          |
+| 5     | 6           | Full tree + one splash D1                                     |
 
-A Level dial in the character sheet section adjusts the budget. Depth 3 requires Depth 1 in the same tree; Depth 5 requires Depth 3. See `forge/forge-data.js` header comment for the data shape.
+A Level dial in the character sheet section adjusts the budget. Refunding a tier cascades down — clicking an already-invested tier refunds it and everything deeper in the same tree.
 
-In addition to feature points, characters get **one talent pick per level** (separate currency). The forge renders N talent slots equal to character level. Picker shows talents grouped by tree, only from trees the player has invested in, capped by investment depth (D1 → L1 talents only; D3 → L1–L3; D5 → all five tiers). 142 tech-tree talents are extracted from `Talents_and_Features_v9.xlsx` → `forge/forge-talents.js`. Leveling down or refunding tree investments auto-trims excess picks.
+In addition to feature points, characters get **one talent pick per level** (separate currency). The forge renders N talent slots equal to character level. Picker shows talents grouped by tree, only from trees the player has invested in, capped by investment depth (D1 → L1 talents only; D2 → L1–L2; D3 → L1–L3; D4 → L1–L4; D5 → all five tiers). 142 tech-tree talents are extracted from `Talents_and_Features_v9.xlsx` → `forge/forge-talents.js`. Leveling down or refunding tree investments auto-trims excess picks.
 
 ## Auto-battler (Raw Essence)
 
