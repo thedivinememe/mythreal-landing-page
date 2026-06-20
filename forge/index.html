@@ -404,9 +404,38 @@
       font-style: normal; margin-bottom: 0.4rem; display: block;
     }
 
+    /* Level dial */
+    .level-dial {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.6rem; margin-bottom: 0.4rem;
+    }
+    .level-dial-label {
+      font-family: var(--font-heading); font-size: 0.7rem;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .level-dial-btn {
+      width: 28px; height: 28px;
+      background: transparent;
+      border: 1px solid var(--gold-line);
+      border-radius: 3px; color: var(--gold);
+      cursor: pointer; font-size: 1rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .level-dial-btn:hover:not(:disabled) { background: var(--gold-dim); border-color: var(--gold); }
+    .level-dial-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .level-dial-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+    .level-dial-value {
+      font-family: var(--font-heading);
+      color: var(--gold); font-size: 1rem; font-weight: 700;
+      min-width: 2.2rem; text-align: center;
+      letter-spacing: 0.04em;
+    }
+
     .ap-pip-row {
       display: flex; gap: 0.4rem; justify-content: center;
-      margin: 0.2rem 0;
+      margin: 0.2rem 0; flex-wrap: wrap;
     }
     .ap-pip {
       width: 22px; height: 22px; border-radius: 50%;
@@ -433,6 +462,33 @@
       color: var(--red); font-weight: 600;
     }
 
+    .attr-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 0.5rem; margin-bottom: 0.3rem;
+    }
+    .attr-header-label {
+      font-family: var(--font-heading); font-size: 0.65rem;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .reroll-btn {
+      background: transparent; border: 1px solid var(--gold-line);
+      color: var(--gold); cursor: pointer;
+      font-family: var(--font-heading); font-size: 0.62rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 0.3rem 0.6rem; border-radius: 3px;
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .reroll-btn:hover { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+    .reroll-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+    .reroll-btn .reroll-icon {
+      display: inline-block; transition: transform 0.5s ease;
+    }
+    .reroll-btn.spinning .reroll-icon {
+      transform: rotate(360deg);
+    }
+
     .attr-grid {
       display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.3rem;
       padding: 0.25rem 0;
@@ -455,6 +511,20 @@
       border-color: var(--gold);
       background: rgba(197, 165, 90, 0.08);
     }
+    .attr-cell.swappable { cursor: pointer; transition: transform 0.2s, border-color 0.2s; }
+    .attr-cell.swappable:hover { border-color: var(--gold-glow); transform: translateY(-1px); }
+    .attr-cell.swappable:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+    .attr-cell.swap-selected {
+      border-color: var(--gold);
+      background: rgba(197, 165, 90, 0.18);
+      box-shadow: 0 0 12px var(--gold-glow);
+    }
+    .attr-hint {
+      font-size: 0.68rem; color: var(--text-dim);
+      text-align: center; letter-spacing: 0.04em;
+      margin-top: 0.3rem; line-height: 1.5;
+    }
+    .attr-hint.active { color: var(--gold); }
     .attr-cell .attr-val.bump {
       animation: attrBump 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
@@ -633,6 +703,7 @@
         <li role="none"><a href="/#features" role="menuitem">Features</a></li>
         <li role="none"><a href="/#world" role="menuitem">The World</a></li>
         <li role="none"><a href="/forge/" class="active" role="menuitem">Build Your Legend</a></li>
+        <li role="none"><a href="/auto-battler/" role="menuitem">Play</a></li>
         <li role="none"><a href="/#signup" role="menuitem">Join</a></li>
         <li role="none"><a href="/MythReal_QuickStart_v0_5_2.pdf" class="btn-cta" role="menuitem" download>Get the Quick-Start Rules</a></li>
       </ul>
@@ -686,15 +757,30 @@
         </div>
 
         <div id="sheetContent" style="display:none;">
-          <!-- AP budget -->
+          <!-- Level dial -->
+          <div class="level-dial" role="group" aria-label="Character level">
+            <span class="level-dial-label">Level</span>
+            <button class="level-dial-btn" id="levelDown" aria-label="Decrease level">−</button>
+            <span class="level-dial-value" id="levelValue" aria-live="polite">1</span>
+            <button class="level-dial-btn" id="levelUp" aria-label="Increase level">+</button>
+          </div>
+
+          <!-- Tech Point budget -->
           <div>
-            <div class="ap-pip-row" id="apPips" aria-label="Action Point budget"></div>
+            <div class="ap-pip-row" id="apPips" aria-label="Tech Point budget"></div>
             <div class="ap-summary" id="apSummary"></div>
           </div>
 
           <!-- Attributes -->
           <div>
-            <div class="attr-grid" id="attrGrid" aria-label="Attributes"></div>
+            <div class="attr-header">
+              <span class="attr-header-label">Standard array · ancestry boosts</span>
+              <button class="reroll-btn" id="rerollBtn" type="button" aria-label="Re-roll standard array">
+                <span class="reroll-icon" aria-hidden="true">⟳</span> Re-roll
+              </button>
+            </div>
+            <div class="attr-grid" id="attrGrid" aria-label="Attributes" role="group"></div>
+            <div class="attr-hint" id="attrHint">Tap two attributes to swap their rolled values.</div>
           </div>
 
           <!-- Features -->
@@ -735,10 +821,51 @@
     // ─── State ───
     const state = {
       ancestry: null,
+      level: 1,
       humanBoosts: [], // for Human: 2 attribute codes
       invested: {},    // { treeCode: maxDepth } e.g. { MRA: 5, FIR: 1 }
       lastUnlocked: null, // for pop animation
+      rolledArray: null, // { STR: 3, COR: -1, ... } — shuffled standard array
+      swapPick: null,    // attribute code currently selected for swap, or null
     };
+
+    function handleSwapClick(code) {
+      if (!state.rolledArray) return;
+      if (state.swapPick === code) {
+        // Tapping the same cell cancels
+        state.swapPick = null;
+        renderSheet();
+        return;
+      }
+      if (state.swapPick === null) {
+        state.swapPick = code;
+        renderSheet();
+        return;
+      }
+      // Second cell — swap and clear
+      const a = state.swapPick, b = code;
+      const tmp = state.rolledArray[a];
+      state.rolledArray[a] = state.rolledArray[b];
+      state.rolledArray[b] = tmp;
+      state.swapPick = null;
+      renderSheet({ animateAttrs: true });
+    }
+
+    function rollArray() {
+      // Fisher-Yates shuffle of the standard array, then map to attribute codes
+      const vals = D.STANDARD_ARRAY.slice();
+      for (let i = vals.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = vals[i]; vals[i] = vals[j]; vals[j] = t;
+      }
+      const out = {};
+      D.ATTRIBUTES.forEach((a, i) => { out[a.code] = vals[i]; });
+      state.rolledArray = out;
+    }
+
+    function getBudget() {
+      return D.POINTS_AT_LEVEL_1 + (state.level - 1) * D.POINTS_PER_LEVEL;
+    }
 
     // ─── Nav mobile toggle ───
     $('navToggle').addEventListener('click', () => {
@@ -785,6 +912,8 @@
     function selectAncestry(id) {
       state.ancestry = id;
       state.humanBoosts = [];
+      state.swapPick = null;
+      rollArray(); // fresh roll for every ancestry pick — see Re-roll button to spin again
       // Update card visual
       document.querySelectorAll('.ancestry-card').forEach((c) => {
         const isSelected = c.dataset.id === id;
@@ -838,8 +967,12 @@
 
     // ─── Compute attributes ───
     function computeAttrs() {
-      const out = { STR: D.BASE_ARRAY.STR, COR: D.BASE_ARRAY.COR, FRT: D.BASE_ARRAY.FRT,
-                    INT: D.BASE_ARRAY.INT, FAI: D.BASE_ARRAY.FAI, SOC: D.BASE_ARRAY.SOC, WIT: D.BASE_ARRAY.WIT };
+      // Until an ancestry is picked we don't show numbers — the empty state covers it.
+      // After ancestry pick, state.rolledArray is always populated.
+      const out = {};
+      D.ATTRIBUTES.forEach((a) => {
+        out[a.code] = state.rolledArray ? state.rolledArray[a.code] : 0;
+      });
       if (!state.ancestry) return out;
       const a = D.ANCESTRIES.find(x => x.id === state.ancestry);
       if (a.boosts.fixed) {
@@ -868,6 +1001,10 @@
         if (depth >= 5) sum += D.NODE_COST.d5;
       });
       return sum;
+    }
+
+    function pointLabel(n) {
+      return n === 1 ? '1 pt' : (n + ' pts');
     }
 
     // ─── Tree graph: build SVG ───
@@ -970,7 +1107,7 @@
             const cost = document.createElementNS(ns, 'text');
             cost.setAttribute('class', 'node-cost');
             cost.setAttribute('y', GRAPH.nodeR + 14);
-            cost.textContent = feat.ap + ' AP';
+            cost.textContent = '1 pt';
             g.appendChild(cost);
           }
           svg.appendChild(g);
@@ -996,7 +1133,8 @@
       const hubSub = document.createElementNS(ns, 'text');
       hubSub.setAttribute('class', 'hub-text sub');
       hubSub.setAttribute('y', 12);
-      hubSub.textContent = 'LV 1';
+      hubSub.setAttribute('id', 'hubLevelText');
+      hubSub.textContent = 'LV ' + state.level;
       hub.appendChild(hubSub);
       svg.appendChild(hub);
 
@@ -1107,7 +1245,7 @@
         html = `
           <div class="tip-tree">${tree.code} · ${D.TREE_GROUPS[tree.group].label} tree</div>
           <h4>${feat.name}</h4>
-          <div class="tip-meta">${tierLabel} · ${feat.ap} AP${feat.spike ? ' · Spike' : ''}</div>
+          <div class="tip-meta">${tierLabel} · 1 pt${feat.spike ? ' · Spike' : ''}</div>
           <div class="tip-desc">${feat.desc}</div>
           ${feat.voice ? `<div class="tip-voice">"${feat.voice}"</div>` : ''}
         `;
@@ -1204,9 +1342,14 @@
       $('sheetContent').style.display = hasContent ? 'flex' : 'none';
       if (hasContent) $('sheetContent').style.flexDirection = 'column';
 
-      // AP pips
+      // Level dial state
+      $('levelValue').textContent = state.level;
+      $('levelDown').disabled = state.level <= 1;
+      $('levelUp').disabled = state.level >= D.MAX_LEVEL;
+
+      // Tech Point pips
       const spend = totalSpend();
-      const budget = D.BUILD_BUDGET_AP;
+      const budget = getBudget();
       const pipRow = $('apPips');
       pipRow.innerHTML = '';
       const renderPipCount = Math.max(budget, spend);
@@ -1218,9 +1361,9 @@
       }
       const summary = $('apSummary');
       if (spend > budget) {
-        summary.innerHTML = `<span class="over-text">Over budget: ${spend} / ${budget} AP</span>`;
+        summary.innerHTML = `<span class="over-text">Over budget: ${spend} / ${budget} pts</span>`;
       } else {
-        summary.textContent = `${spend} / ${budget} AP spent`;
+        summary.textContent = `${spend} / ${budget} ${budget === 1 ? 'pt' : 'pts'} spent`;
       }
 
       // Attributes
@@ -1232,11 +1375,25 @@
         previous[cell.dataset.code] = cell.querySelector('.attr-val')?.textContent;
       });
       grid.innerHTML = '';
+      const canSwap = !!state.rolledArray;
       D.ATTRIBUTES.forEach((a) => {
         const cell = document.createElement('div');
-        cell.className = 'attr-cell' + (boosted.has(a.code) ? ' boosted' : '');
+        let cls = 'attr-cell';
+        if (boosted.has(a.code)) cls += ' boosted';
+        if (canSwap) cls += ' swappable';
+        if (state.swapPick === a.code) cls += ' swap-selected';
+        cell.className = cls;
         cell.dataset.code = a.code;
-        cell.title = `${a.name} — ${a.desc}`;
+        const rolled = state.rolledArray ? state.rolledArray[a.code] : 0;
+        const rolledTxt = (rolled >= 0 ? '+' : '') + rolled;
+        const boostNote = boosted.has(a.code) ? ' (boosted by ancestry)' : '';
+        cell.title = `${a.name} — ${a.desc}\nRolled ${rolledTxt}${boostNote}`;
+        if (canSwap) {
+          cell.setAttribute('role', 'button');
+          cell.setAttribute('tabindex', '0');
+          cell.setAttribute('aria-pressed', state.swapPick === a.code ? 'true' : 'false');
+          cell.setAttribute('aria-label', `${a.name}: ${rolledTxt} rolled. Click to swap.`);
+        }
         const v = attrs[a.code];
         const display = (v >= 0 ? '+' : '') + v;
         const prev = previous[a.code];
@@ -1245,8 +1402,28 @@
           <div class="attr-code">${a.code}</div>
           <div class="attr-val${bump ? ' bump' : ''}">${display}</div>
         `;
+        if (canSwap) {
+          const onAct = () => handleSwapClick(a.code);
+          cell.addEventListener('click', onAct);
+          cell.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onAct(); }
+          });
+        }
         grid.appendChild(cell);
       });
+
+      // Attr hint state
+      const hintEl = $('attrHint');
+      if (!canSwap) {
+        hintEl.classList.remove('active');
+        hintEl.textContent = 'Pick an ancestry to roll attributes.';
+      } else if (state.swapPick) {
+        hintEl.classList.add('active');
+        hintEl.textContent = `Selected ${state.swapPick}. Tap another to swap, or tap ${state.swapPick} again to cancel.`;
+      } else {
+        hintEl.classList.remove('active');
+        hintEl.textContent = 'Tap two attributes to swap their rolled values.';
+      }
 
       // Features
       const featList = $('featureList');
@@ -1263,7 +1440,7 @@
             const f = tree['d'+d];
             lines.push({
               name: f.name,
-              meta: `${tree.code} · Tier ${d === 1 ? 'I' : d === 3 ? 'III' : 'V'} · ${f.ap} AP${f.spike ? ' · Spike' : ''}`,
+              meta: `${tree.code} · Tier ${d === 1 ? 'I' : d === 3 ? 'III' : 'V'} · 1 pt${f.spike ? ' · Spike' : ''}`,
               desc: f.desc,
             });
           }
@@ -1294,7 +1471,7 @@
       if (!state.ancestry) hint.textContent = 'Pick an ancestry to begin.';
       else if (state.ancestry === 'human' && state.humanBoosts.length < 2) hint.textContent = 'Pick two attribute boosts.';
       else if (features === 0) hint.textContent = 'Unlock at least one Tech Tree feature.';
-      else if (overBudget) hint.textContent = 'You are over your 5 AP budget. Refund some nodes.';
+      else if (overBudget) hint.textContent = `Over budget at L${state.level}. Level up or refund some nodes.`;
       else hint.textContent = 'Ready to forge.';
     }
 
@@ -1320,6 +1497,7 @@
         attributes: attrs,
         topAttributes: topAttrs,
         features,
+        level: state.level,
       };
     }
 
@@ -1425,14 +1603,46 @@
     $('synthBtn').addEventListener('click', synthesize);
     $('resetBtn').addEventListener('click', () => {
       state.ancestry = null;
+      state.level = 1;
       state.humanBoosts = [];
       state.invested = {};
       state.lastUnlocked = null;
+      state.rolledArray = null;
+      state.swapPick = null;
       document.querySelectorAll('.ancestry-card').forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-checked', 'false'); });
       $('humanBoosts').classList.remove('show');
+      const hubText = document.getElementById('hubLevelText');
+      if (hubText) hubText.textContent = 'LV 1';
       paintGraph();
       renderSheet();
       view.scale = 1; view.tx = 0; view.ty = 0; applyView();
+    });
+
+    // ─── Level dial ───
+    function changeLevel(delta) {
+      const next = Math.max(1, Math.min(D.MAX_LEVEL, state.level + delta));
+      if (next === state.level) return;
+      state.level = next;
+      const hubText = document.getElementById('hubLevelText');
+      if (hubText) hubText.textContent = 'LV ' + state.level;
+      // Repaint the graph in case nodes shifted between available/locked
+      paintGraph();
+      renderSheet();
+    }
+    $('levelDown').addEventListener('click', () => changeLevel(-1));
+    $('levelUp').addEventListener('click', () => changeLevel(1));
+
+    // ─── Re-roll ───
+    $('rerollBtn').addEventListener('click', () => {
+      if (!state.ancestry) return; // nothing to re-roll yet
+      rollArray();
+      state.swapPick = null;
+      const btn = $('rerollBtn');
+      if (!prefersReduced) {
+        btn.classList.add('spinning');
+        setTimeout(() => btn.classList.remove('spinning'), 500);
+      }
+      renderSheet({ animateAttrs: true });
     });
 
     // ─── Init ───

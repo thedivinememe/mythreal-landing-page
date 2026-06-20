@@ -8,10 +8,14 @@
 // `canon`  = 'pregen' (verbatim from a Quick-Start pregen) or 'compiled' (from the
 //            features compilation spreadsheet, which is the working master list).
 //
-// Forge build economy: each character starts with 5 AP to spend across trees.
-// Depth 1 = 1 AP, Depth 3 = 2 AP (requires Depth 1), Depth 5 = 2 AP (requires Depth 3).
-// Full single-tree specialist = 5 AP (one tree, all three tiers).
-// Versatile generalist = 5x Depth 1 (five trees, foundations only).
+// Forge build economy (matches Quick-Start v0.5.2 canonical rules):
+//   At Level 1, a character has 2 Tech Tree feature points.
+//   Each subsequent level grants +1 point. So budget = level + 1 (capped at L5 = 6).
+//   Each tier costs 1 point: Depth 1 (Proficiency), Depth 3 (Specialty), Depth 5 (Mastery).
+//   Depth 3 requires Depth 1 in the same tree; Depth 5 requires Depth 3.
+//   - L1 (2 pts): one tree at depth 2 (D1+D3), OR D1 in two trees.
+//   - L2 (3 pts): single-tree specialist hits the L5 spike, OR D1+D3 + D1 elsewhere.
+//   - L5 (6 pts): can take all three tiers in one tree and still splash three more D1s.
 //
 // To add or revise trees, edit this file directly — the forge UI rebuilds from data.
 
@@ -28,8 +32,11 @@
     { code: 'WIT', name: 'Wits',         desc: 'Awareness. Initiative, perception, insight.' },
   ];
 
-  // Standard array — matches the L1 pregens' shape.
-  const BASE_ARRAY = { STR: 1, COR: 1, FRT: 1, INT: 0, FAI: -1, SOC: 1, WIT: 2 };
+  // Canonical L1 standard array (Quick-Start v0.5.2): assign these 7 values to
+  // the 7 attributes in any order. Total +8 (one specialty, two solid secondaries,
+  // two competent, one mediocre, one weakness). The forge shuffles this array
+  // across attributes each time ancestry is chosen, then applies ancestry boosts.
+  const STANDARD_ARRAY = [3, 2, 2, 1, 1, 0, -1];
 
   const ANCESTRIES = [
     {
@@ -480,12 +487,15 @@
 
   window.FORGE_DATA = {
     ATTRIBUTES,
-    BASE_ARRAY,
+    STANDARD_ARRAY,
     ANCESTRIES,
     TECH_TREES,
     TREE_GROUPS,
     VOICE_SAMPLES,
-    BUILD_BUDGET_AP: 5,
-    NODE_COST: { d1: 1, d3: 2, d5: 2 },
+    // Canonical: 2 points at L1, +1 per level. Budget = level + 1.
+    POINTS_AT_LEVEL_1: 2,
+    POINTS_PER_LEVEL: 1,
+    MAX_LEVEL: 5,
+    NODE_COST: { d1: 1, d3: 1, d5: 1 },
   };
 })();

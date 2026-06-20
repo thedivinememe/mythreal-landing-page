@@ -1,0 +1,3072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MythReal: Raw Essence — Auto-Battler Demo</title>
+<meta name="description" content="MythReal: Raw Essence — open packs, draft a party of three, and run an auto-battler set in the Mythoverse.">
+<meta property="og:title" content="MythReal: Raw Essence — Auto-Battler Demo">
+<meta property="og:description" content="Open packs, draft a party, run auto-battles in the MythReal multiverse.">
+<meta property="og:image" content="/mythreal-logo-gold.png">
+<link rel="icon" type="image/png" href="/mythreal-logo-small-gold.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0c10; --panel:#101218; --panel2:#161a22; --line:#23293a;
+  --fg:#c9ccd1; --dim:#7a8190; --faint:#4a5161;
+  --cyan:#5fd7d7; --red:#ff6b6b; --green:#69db7c; --gold:#ffc94d;
+  --orange:#ffa94d; --purple:#c084fc; --blue:#63b3ed;
+  --r-common:#9aa0a6; --r-uncommon:#51cf66; --r-rare:#4dabf7; --r-epic:#b964f0; --r-legendary:#ffc94d;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%;}
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:ui-monospace,'Cascadia Mono','JetBrains Mono',Consolas,Menlo,monospace;
+  font-size:14px; line-height:1.45;
+}
+#app{max-width:1100px; margin:0 auto; padding:10px 12px 60px;}
+header{
+  border:1px solid var(--line); background:var(--panel);
+  padding:10px 14px; margin-bottom:10px;
+  display:flex; flex-wrap:wrap; gap:8px 18px; align-items:baseline;
+}
+header h1{
+  font-size:18px; letter-spacing:3px; color:var(--gold); font-weight:700;
+  text-shadow:0 0 14px rgba(255,201,77,.25);
+}
+header h1 span{color:var(--dim); font-weight:400; letter-spacing:1px; font-size:12px;}
+.hstats{display:flex; flex-wrap:wrap; gap:4px 16px; font-size:12px; color:var(--dim); margin-left:auto; align-items:baseline;}
+.hstats b{color:var(--fg);}
+.hstats .pity b{color:var(--purple);}
+#seedwrap{font-size:12px; color:var(--dim);}
+#seedwrap input{
+  background:var(--panel2); border:1px solid var(--line); color:var(--cyan);
+  font-family:inherit; font-size:12px; padding:2px 6px; width:110px;
+}
+nav{display:flex; gap:6px; margin-bottom:10px;}
+nav button{
+  flex:1; background:var(--panel); color:var(--dim); border:1px solid var(--line);
+  font-family:inherit; font-size:13px; letter-spacing:2px; padding:8px 0; cursor:pointer;
+}
+nav button:hover{color:var(--fg); border-color:var(--faint);}
+nav button.active{color:var(--gold); border-color:var(--gold); background:var(--panel2);}
+.view{display:none;}
+.view.active{display:block;}
+button.act{
+  background:var(--panel2); border:1px solid var(--faint); color:var(--fg);
+  font-family:inherit; font-size:13px; padding:8px 18px; cursor:pointer; letter-spacing:1px;
+}
+button.act:hover{border-color:var(--gold); color:var(--gold);}
+button.act:disabled{opacity:.4; cursor:default;}
+button.act:disabled:hover{border-color:var(--faint); color:var(--fg);}
+button.big{font-size:16px; padding:14px 34px; letter-spacing:3px;}
+button.danger:hover{border-color:var(--red); color:var(--red);}
+
+/* ---- pack opening ---- */
+#packview .stage{display:flex; flex-direction:column; align-items:center; gap:14px; padding:24px 0;}
+#reveal{
+  width:100%; max-width:640px; min-height:120px;
+  border:1px solid var(--line); background:var(--panel); padding:16px 18px;
+  display:none; flex-direction:column; gap:3px;
+}
+#reveal.show{display:flex;}
+#reveal .rl{opacity:0; animation:fadein .35s forwards;}
+@keyframes fadein{to{opacity:1;}}
+#reveal .rl.lab{color:var(--dim); margin-top:8px; font-size:12px; letter-spacing:1px;}
+#reveal .rl.die{color:var(--cyan);}
+#reveal .rl.big{font-size:16px;}
+#reveal .banner{
+  margin-top:10px; padding:10px; text-align:center; font-size:18px; letter-spacing:4px;
+  border:1px solid; font-weight:700;
+}
+#reveal .flavor{color:var(--dim); font-style:italic;}
+.r-common{color:var(--r-common); border-color:var(--r-common);}
+.r-uncommon{color:var(--r-uncommon); border-color:var(--r-uncommon);}
+.r-rare{color:var(--r-rare); border-color:var(--r-rare);}
+.r-epic{color:var(--r-epic); border-color:var(--r-epic); text-shadow:0 0 12px rgba(185,100,240,.4);}
+.r-legendary{color:var(--r-legendary); border-color:var(--r-legendary); text-shadow:0 0 16px rgba(255,201,77,.5);}
+
+/* ---- collection ---- */
+#colhead{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:10px; color:var(--dim); font-size:12px;}
+#cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:10px;}
+.card{
+  border:1px solid var(--line); background:var(--panel); padding:10px 12px;
+  border-left-width:4px; position:relative; font-size:12.5px;
+}
+.card.b-common{border-left-color:var(--r-common);}
+.card.b-uncommon{border-left-color:var(--r-uncommon);}
+.card.b-rare{border-left-color:var(--r-rare);}
+.card.b-epic{border-left-color:var(--r-epic); box-shadow:0 0 14px rgba(185,100,240,.12);}
+.card.b-legendary{border-left-color:var(--r-legendary); box-shadow:0 0 18px rgba(255,201,77,.15);}
+.card.selected{outline:1px solid var(--gold); background:#15130c;}
+.card h3{font-size:14px; margin-bottom:1px;}
+.card .sub{color:var(--dim); font-size:11.5px;}
+.card .desc{color:var(--purple); font-size:11.5px; font-style:italic; margin:3px 0;}
+.card .trees{color:var(--gold); font-size:12px; margin:2px 0;}
+.card table.attrs{width:100%; border-collapse:collapse; margin:6px 0 4px; font-size:11.5px; text-align:center;}
+.card table.attrs td{border:1px solid var(--line); padding:1px 0;}
+.card table.attrs td.hd{color:var(--dim); font-size:10px;}
+.card .pos{color:var(--green);} .card .neg{color:var(--red);}
+.card .vit{font-size:12px; margin:3px 0;}
+.card ul.abs{list-style:none; margin:4px 0;}
+.card ul.abs li{padding:0 0 0 10px; text-indent:-10px;}
+.card ul.abs li .cost{color:var(--cyan);}
+.card ul.abs li.un{color:var(--faint);}
+.card ul.abs li.spk{color:var(--gold);}
+.card ul.abs li.rx .cost::after{content:" R"; color:var(--orange);}
+.card .quirk{color:var(--dim); font-size:11px; margin-top:5px;}
+.card .phrase{color:var(--blue); font-size:11px; font-style:italic;}
+.card .cbtns{display:flex; gap:6px; margin-top:8px;}
+.card .cbtns button{font-size:11px; padding:4px 10px;}
+.card .rtag{position:absolute; top:8px; right:10px; font-size:10px; letter-spacing:2px;}
+
+/* ---- battle ---- */
+#battlebar{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px;}
+#battlebar label{color:var(--dim); font-size:12px;}
+#battlebar select,#battlebar input[type=range]{
+  background:var(--panel2); border:1px solid var(--line); color:var(--fg); font-family:inherit;
+}
+#roster{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;}
+.rside{border:1px solid var(--line); background:var(--panel); padding:8px 10px; font-size:12px;}
+.rside h4{font-size:11px; letter-spacing:2px; color:var(--dim); margin-bottom:5px;}
+.runit{display:flex; gap:6px; align-items:baseline; padding:1px 0; white-space:nowrap; overflow:hidden;}
+.runit .nm{min-width:110px; overflow:hidden; text-overflow:ellipsis;}
+.runit .hpbar{color:var(--green); letter-spacing:-1px;}
+.runit .hpbar .lost{color:#333a47;}
+.runit.hurt .hpbar{color:var(--orange);}
+.runit.crit .hpbar{color:var(--red);}
+.runit.down .nm{color:var(--red); text-decoration:line-through;}
+.runit.dead{opacity:.35;} .runit.dead .nm{text-decoration:line-through;}
+.runit .meta{color:var(--faint); font-size:10.5px;}
+#log{
+  border:1px solid var(--line); background:#080a0e; padding:10px 14px;
+  height:430px; overflow-y:auto; font-size:13px;
+}
+#log p{margin:0; padding:1px 0;}
+#log .info{color:var(--fg);} #log .dim{color:var(--dim);}
+#log .ap{color:var(--cyan);}
+#log .dmg{color:var(--red);}
+#log .heal{color:var(--green);}
+#log .save{color:#d8c878;}
+#log .react{color:var(--orange);}
+#log .miss{color:var(--faint);}
+#log .death{color:#b34444; font-weight:700;}
+#log .summon{color:var(--purple);}
+#log .round{
+  color:var(--gold); letter-spacing:2px; margin-top:8px; padding-top:4px;
+  border-top:1px dashed var(--line); display:block;
+}
+#log .turnhead{color:#9fb4d8; margin-top:4px;}
+#log .spike{
+  color:var(--gold); font-weight:700; border:1px solid var(--gold);
+  padding:4px 8px; margin:6px 0; text-shadow:0 0 10px rgba(255,201,77,.5);
+  display:block; letter-spacing:1px;
+}
+#log .win{color:var(--gold); font-size:15px; font-weight:700; letter-spacing:2px;}
+#endscreen{border:1px solid var(--gold); background:var(--panel); padding:12px 16px; margin-top:8px; display:none;}
+#endscreen h3{color:var(--gold); letter-spacing:2px; margin-bottom:6px;}
+#endscreen td{padding:1px 14px 1px 0; font-size:12.5px;}
+#endscreen td:first-child{color:var(--dim);}
+.note{color:var(--dim); font-size:12px;}
+@media (max-width:700px){
+  #roster{grid-template-columns:1fr;}
+  #cards{grid-template-columns:1fr;}
+  header h1{font-size:15px;}
+  #log{height:330px; font-size:12px;}
+  .hstats{margin-left:0;}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Brand overrides — gold-on-near-black, Cinzel + Raleway
+   (Mirrors the tokens used in index.html and forge/index.html)
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:           #0D0D0D;
+  --panel:        rgba(26, 26, 26, 0.6);
+  --panel2:       rgba(13, 13, 13, 0.6);
+  --line:         rgba(197, 165, 90, 0.18);
+  --fg:           #E8E0D0;
+  --dim:          rgba(232, 224, 208, 0.55);
+  --faint:        rgba(232, 224, 208, 0.3);
+  --cyan:         #9AB8C7;
+  --red:          #b94a4a;
+  --green:        #6fae6f;
+  --gold:         #C5A55A;
+  --orange:       #d99a4d;
+  --purple:       #b08adf;
+  --blue:         #7da9d8;
+  --r-common:     #9aa0a6;
+  --r-uncommon:   #6fae6f;
+  --r-rare:       #7da9d8;
+  --r-epic:       #b08adf;
+  --r-legendary:  #C5A55A;
+  --font-heading: 'Cinzel', serif;
+  --font-body:    'Raleway', sans-serif;
+  --font-mono:    ui-monospace, 'Cascadia Mono', 'JetBrains Mono', Consolas, Menlo, monospace;
+  --gold-dim:     rgba(197, 165, 90, 0.15);
+  --gold-glow:    rgba(197, 165, 90, 0.35);
+}
+
+body{
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--fg);
+  overflow-x: hidden;
+}
+body::before{
+  content:''; position:fixed; inset:0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+  pointer-events:none; z-index:0;
+}
+body::after{
+  content:''; position:fixed; inset:0; opacity:0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px 256px; pointer-events:none; z-index:0;
+}
+
+/* Site nav (fixed header above the game shell) */
+.site-nav{
+  position: fixed; top:0; left:0; right:0; z-index:100;
+  padding: 0.75rem 0;
+  background: rgba(13, 13, 13, 0.85);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(197, 165, 90, 0.08);
+}
+.site-nav .nav-inner{
+  display:flex; align-items:center; justify-content:space-between;
+  width:94%; max-width:1400px; margin:0 auto;
+}
+.site-nav .nav-logo img{ height:40px; width:auto; display:block; }
+.site-nav .nav-links{
+  display:flex; align-items:center; gap:1.5rem; list-style:none;
+  margin:0; padding:0;
+}
+.site-nav .nav-links a{
+  font-family: var(--font-heading); font-size:0.8rem; letter-spacing:0.08em;
+  text-transform:uppercase; color:var(--fg); text-decoration:none;
+  transition: color 0.3s;
+}
+.site-nav .nav-links a.active{ color: var(--gold); }
+.site-nav .nav-links a:hover{ color: var(--gold); }
+.site-nav .btn-cta{
+  display:inline-block; padding:0.6rem 1.4rem;
+  background:var(--gold); color:#0D0D0D;
+  font-family:var(--font-heading); font-size:0.75rem; font-weight:700;
+  letter-spacing:0.08em; text-transform:uppercase;
+  border:none; border-radius:3px; cursor:pointer;
+  transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+  text-decoration:none;
+}
+.site-nav .btn-cta:hover{
+  background:#dfc476; transform:translateY(-1px);
+  box-shadow:0 4px 20px var(--gold-glow);
+}
+.site-nav .nav-toggle{
+  display:none; background:none; border:none; cursor:pointer; padding:0.5rem;
+}
+.site-nav .nav-toggle span{
+  display:block; width:24px; height:2px; background:var(--fg);
+  margin:5px 0; transition: transform 0.3s, opacity 0.3s;
+}
+@media (max-width:768px){
+  .site-nav .nav-toggle{ display:block; }
+  .site-nav .nav-links{
+    position:fixed; top:0; right:-100%; width:70%; max-width:300px; height:100vh;
+    flex-direction:column; justify-content:center; gap:2rem;
+    background: rgba(13,13,13,0.98); backdrop-filter: blur(12px);
+    transition: right 0.4s ease;
+  }
+  .site-nav .nav-links.open{ right:0; }
+  .site-nav .nav-links a{ font-size:1rem; }
+}
+
+/* App container — push below fixed nav, z-index above textures */
+#app{
+  position:relative; z-index:1;
+  padding-top: 5rem; padding-bottom: 4rem;
+}
+
+/* Game header (in-app stats bar) */
+header{
+  border:1px solid rgba(197, 165, 90, 0.1);
+  background: var(--panel);
+  backdrop-filter: blur(6px);
+  border-top: 2px solid var(--gold);
+  border-radius: 4px;
+}
+header h1{
+  font-family: var(--font-heading);
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-shadow: 0 0 14px var(--gold-dim);
+}
+header h1 span{
+  color: var(--dim);
+  font-family: var(--font-body);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+}
+.hstats{ font-family: var(--font-body); }
+.hstats b{ color: var(--gold); font-weight:600; }
+.hstats .pity b{ color: var(--purple); }
+#seedwrap input{
+  background: rgba(13, 13, 13, 0.5);
+  border: 1px solid var(--line);
+  color: var(--gold);
+  font-family: var(--font-mono);
+}
+
+/* Game tab bar */
+nav{ gap: 6px; }
+nav button{
+  background: rgba(13, 13, 13, 0.5);
+  color: var(--dim);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-family: var(--font-heading);
+  letter-spacing: 0.12em;
+}
+nav button:hover{ color: var(--gold); border-color: var(--gold-glow); }
+nav button.active{
+  color: var(--gold); border-color: var(--gold);
+  background: var(--gold-dim);
+  box-shadow: 0 0 14px var(--gold-dim);
+}
+
+/* Action buttons */
+button.act{
+  background: rgba(13, 13, 13, 0.5);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  font-family: var(--font-heading);
+  letter-spacing: 0.06em;
+  border-radius: 3px;
+}
+button.act:hover{ border-color: var(--gold); color: var(--gold); }
+button.big{ letter-spacing: 0.18em; }
+
+/* Reveal panel */
+#reveal{
+  border: 1px solid rgba(197, 165, 90, 0.1);
+  background: var(--panel);
+  backdrop-filter: blur(6px);
+  border-radius: 4px;
+}
+#reveal .rl.die{ color: var(--gold); }
+#reveal .flavor{ color: var(--dim); }
+
+/* Cards */
+.card{
+  border: 1px solid rgba(197, 165, 90, 0.1);
+  background: var(--panel);
+  backdrop-filter: blur(6px);
+  border-radius: 4px;
+  border-left-width: 4px;
+}
+.card h3{
+  font-family: var(--font-heading);
+  color: var(--fg);
+  letter-spacing: 0.02em;
+}
+.card .desc{ color: var(--purple); }
+.card .trees{ color: var(--gold); font-family: var(--font-heading); letter-spacing: 0.04em; }
+.card table.attrs{
+  font-family: var(--font-mono);
+}
+.card table.attrs td{
+  border: 1px solid rgba(197, 165, 90, 0.1);
+}
+.card table.attrs td.hd{ color: var(--dim); }
+.card ul.abs li .cost{ color: var(--gold); }
+.card ul.abs li.spk{ color: var(--gold); }
+.card.selected{
+  outline: 1px solid var(--gold);
+  background: rgba(197, 165, 90, 0.06);
+  box-shadow: 0 0 18px var(--gold-dim);
+}
+
+/* Battle roster + log */
+.rside{
+  border: 1px solid rgba(197, 165, 90, 0.1);
+  background: var(--panel);
+  backdrop-filter: blur(6px);
+  border-radius: 4px;
+}
+.rside h4{
+  font-family: var(--font-heading);
+  letter-spacing: 0.12em;
+  color: var(--gold);
+}
+.runit{ font-family: var(--font-mono); }
+#log{
+  border: 1px solid rgba(197, 165, 90, 0.1);
+  background: rgba(8, 10, 14, 0.85);
+  backdrop-filter: blur(4px);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+}
+#log .round{
+  border-top: 1px dashed var(--line);
+  letter-spacing: 0.12em;
+}
+#log .spike{
+  border: 1px solid var(--gold);
+  letter-spacing: 0.08em;
+  border-radius: 3px;
+}
+
+#endscreen{
+  border: 1px solid var(--gold);
+  background: var(--panel);
+  backdrop-filter: blur(6px);
+  border-radius: 4px;
+}
+#endscreen h3{
+  font-family: var(--font-heading);
+  letter-spacing: 0.14em;
+}
+
+#battlebar select, #battlebar input[type=range]{
+  background: rgba(13, 13, 13, 0.5);
+  border: 1px solid var(--line);
+  color: var(--fg);
+}
+#battlebar label{ color: var(--dim); }
+
+/* Footer */
+.site-footer{
+  position: relative; z-index: 1;
+  padding: 2.5rem 0 1.5rem;
+  border-top: 1px solid rgba(197, 165, 90, 0.1);
+  text-align: center;
+}
+.site-footer .footer-inner{
+  width: 94%; max-width: 1400px; margin: 0 auto;
+}
+.site-footer .footer-logo img{
+  height: 36px; width: auto; margin: 0 auto 0.8rem; display: block;
+}
+.site-footer p{
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: rgba(232, 224, 208, 0.4);
+  line-height: 1.7;
+}
+.site-footer a{ color: var(--gold); text-decoration: none; }
+.site-footer a:hover{ color: #dfc476; }
+
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═════════════ Site nav (mirrors main site) ═════════════ -->
+<header class="site-nav" role="banner">
+  <nav class="nav-inner" aria-label="Main navigation">
+    <a href="/" class="nav-logo" aria-label="MythReal home">
+      <img src="/mythreal-logo-small-gold.png" alt="MythReal" width="292" height="231">
+    </a>
+    <ul class="nav-links" id="siteNavLinks" role="menubar">
+      <li role="none"><a href="/#about" role="menuitem">About</a></li>
+      <li role="none"><a href="/#features" role="menuitem">Features</a></li>
+      <li role="none"><a href="/#world" role="menuitem">The World</a></li>
+      <li role="none"><a href="/forge/" role="menuitem">Build Your Legend</a></li>
+      <li role="none"><a href="/auto-battler/" class="active" role="menuitem">Play</a></li>
+      <li role="none"><a href="/#signup" role="menuitem">Join</a></li>
+      <li role="none"><a href="/MythReal_QuickStart_v0_5_2.pdf" class="btn-cta" role="menuitem" download>Get the Quick-Start Rules</a></li>
+    </ul>
+    <button class="nav-toggle" id="siteNavToggle" aria-label="Toggle navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+
+<div id="app">
+  <header>
+    <h1>MYTHREAL <span>// RAW ESSENCE</span></h1>
+    <div class="hstats">
+      <span>Packs: <b id="h-packs">0</b></span>
+      <span>W/L: <b id="h-wl">0/0</b></span>
+      <span class="pity">Pity (since Epic+): <b id="h-pity">0</b></span>
+      <span id="seedwrap">Seed: <input id="seedinput" placeholder="random" spellcheck="false"></span>
+    </div>
+  </header>
+  <nav>
+    <button id="tab-pack" class="active">PACK OPENING</button>
+    <button id="tab-col">COLLECTION</button>
+    <button id="tab-battle">BATTLE</button>
+  </nav>
+
+  <div id="packview" class="view active">
+    <div class="stage">
+      <button id="openpack" class="act big">⬢ OPEN PACK ⬢</button>
+      <div class="note">An unopened pack. Inside: seven dice that haven't decided who they are yet.</div>
+      <div id="reveal"></div>
+      <div id="postreveal" style="display:none; gap:10px;">
+        <button id="openanother" class="act">OPEN ANOTHER</button>
+        <button id="gocol" class="act">VIEW COLLECTION</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="colview" class="view">
+    <div id="colhead">
+      <span>Select <b style="color:var(--gold)">3</b> for your party.</span>
+      <span id="partycount">Party: 0/3</span>
+      <button id="tobattle" class="act" disabled>TO BATTLE ➤</button>
+    </div>
+    <div id="cards"></div>
+    <div id="colempty" class="note" style="padding:30px; text-align:center;">No characters yet. The packs are waiting.</div>
+  </div>
+
+  <div id="batview" class="view">
+    <div id="battlebar">
+      <button id="startbattle" class="act">⚔ NEW BATTLE</button>
+      <button id="playpause" class="act" disabled>▮▮</button>
+      <label>Speed
+        <select id="speed">
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+          <option value="0">instant</option>
+        </select>
+      </label>
+      <label>Difficulty <input id="difficulty" type="range" min="-3" max="3" value="0" step="1">
+        <span id="diffname">Even Odds</span></label>
+    </div>
+    <div id="roster">
+      <div class="rside"><h4>YOUR PARTY</h4><div id="roster0"></div></div>
+      <div class="rside"><h4>OPPOSITION</h4><div id="roster1"></div></div>
+    </div>
+    <div id="log"><p class="dim">Assemble a party of 3 in the Collection, then start a battle.</p></div>
+    <div id="endscreen"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   MYTHREAL: RAW ESSENCE — single-file auto battler (Quick-Start v0.5)
+   ===================================================================== */
+
+/* ============================ RNG ====================================
+   Seedable PRNG (xmur3 hash -> mulberry32). Same seed = same packs and
+   same battles. Every visible number comes from these dice. */
+function xmur3(str){
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++){
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return function(){
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return (h ^= h >>> 16) >>> 0;
+  };
+}
+function mulberry32(a){
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function makeRng(seedStr){
+  const seed = (seedStr && String(seedStr).trim()) || String(Math.floor(Math.random() * 1e9));
+  const f = mulberry32(xmur3(seed)());
+  return {
+    seed,
+    random: f,
+    int(a, b){ return a + Math.floor(f() * (b - a + 1)); },          // inclusive
+    pick(arr){ return arr[Math.floor(f() * arr.length)]; },
+    shuffle(arr){
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--){
+        const j = Math.floor(f() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    },
+    die(sides){ return 1 + Math.floor(f() * sides); },
+    roll(n, sides){            // -> {dice:[..], total}
+      const dice = [];
+      for (let i = 0; i < n; i++) dice.push(this.die(sides));
+      return { dice, total: dice.reduce((s, d) => s + d, 0) };
+    },
+    rollStr(str){              // "2d6" -> {dice, total, n, sides}
+      const m = /^(\d+)d(\d+)$/.exec(str);
+      const r = this.roll(+m[1], +m[2]);
+      return { ...r, n: +m[1], sides: +m[2] };
+    },
+  };
+}
+function fmtDice(dice){ return '[' + dice.join(',') + ']'; }
+function fmtMod(n){ return n >= 0 ? '+' + n : String(n); }
+
+/* ========================= GAME DATA =================================
+   All tunable numbers live in this block and in TREES below.
+   BALANCE ANCHOR: 1 AP ≈ 1d6 of effect value. Every ability cost in the
+   data tables is normalized against that anchor — retune here, not in
+   the engine. */
+
+const ATTRS = ['STR','COR','FRT','INT','FAI','SOC','WIT'];
+
+const ANCESTRIES = {
+  Elf:   { bonuses: { COR:1, INT:1, FAI:1, FRT:-1 } },
+  Orc:   { bonuses: { STR:1, FRT:1 } },
+  Human: { bonuses: 'twoRandom' },           // +1 to two random attributes
+  Drake: { bonuses: { STR:1, WIT:1 } },
+};
+
+const BACKGROUNDS = [
+  ['Acrobat','STR','COR'],   ['Entertainer','SOC','WIT'], ['Artist','COR','INT'],
+  ['Barkeep','FRT','SOC'],   ['Bodyguard','STR','FRT'],   ['Artisan','STR','INT'],
+  ['Criminal','COR','INT'],  ['Detective','WIT','INT'],   ['Medic','FRT','WIT'],
+  ['Drifter','INT','SOC'],   ['Emissary','INT','SOC'],    ['Farmer','FRT','WIT'],
+  ['Gambler','COR','SOC'],   ['Hermit','FRT','INT'],      ['Inventor','COR','INT'],
+  ['Merchant','INT','SOC'],  ['Miner','STR','WIT'],       ['Nomad','FRT','WIT'],
+  ['Sailor','STR','COR'],    ['Scholar','INT','WIT'],     ['Shepherd','FRT','WIT'],
+  ['Prisoner','STR','FRT'],  ['Soldier','STR','FRT'],     ['Street Rat','COR','FRT'],
+  ['Teacher','INT','SOC'],   ['Zealot','FAI','STR'],
+];
+
+/* Rarity is emergent: computed from the raw 7×(2d4−5) roll total, BEFORE
+   ancestry/background bonuses. Tune thresholds here. Empirical targets:
+   ~50/30/12/5/2-3 %. Legendary also triggers on three+ individual +3s.
+   Tuned via 200k-roll simulation: these thresholds land at ~45/34/14/4/2.4%,
+   the closest achievable fit on this discrete curve. */
+const RARITY = {
+  order: ['common','uncommon','rare','epic','legendary'],
+  thresholds: { uncommon:0, rare:4, epic:7, legendary:9 }, // min roll total
+  legendaryTriplePlus3: 3,   // # of individual +3 rolls that force legendary
+  data: {
+    common:    { label:'COMMON',    mem:4, hp:0, color:'common' },
+    uncommon:  { label:'UNCOMMON',  mem:4, hp:2, color:'uncommon' },
+    rare:      { label:'RARE',      mem:5, hp:2, color:'rare',      bonusAbility:true },
+    epic:      { label:'EPIC',      mem:5, hp:4, color:'epic',      forceDepth:3 },
+    legendary: { label:'LEGENDARY', mem:6, hp:6, color:'legendary', forceDepth:3, spike:true, atkBonus:1 },
+  },
+};
+
+const GEN = {            // character-generation knobs
+  featurePoints: 2,      // the level-1 rule
+  splitChance: 0.70,     // 1+1 across two trees vs 2-deep in one
+  offStatChance: 0.15,   // fully random tree pick + random attr assignment
+  secondTreeSynergy: 0.70, // second tree prefers overlapping governing attrs
+  baseHP: 12, baseDEF: 10, memorySlots: 4,
+};
+
+const TITLES = [
+  'the Unkillable','the Hollow-Crowned','the Last Argument','the Unready No Longer',
+  'the Dice-Blessed','the Storm Made Flesh','the Debt Collector','the Quiet Ruin',
+  'the Once-Dead','the Eighth Roll','the Mountain\'s Grudge','the Candle That Bites',
+  'the Wolf Arithmetic','the Unwritten','the Final Stanza','the Grave\'s Regret',
+];
+
+const NAME_POOLS = {
+  Elf:   { a:['Ael','Syl','Thal','Vael','Ily','Cael','Lor','Fen','Eir','Nim'],
+           b:['arin','wen','andor','ith','aris','uel','enna','ion','ael','ys'] },
+  Orc:   { a:['Gor','Krag','Ur','Mok','Thrag','Bru','Karg','Hru','Drog','Zug'],
+           b:['mash','ka','gan','tuk','nar','gore','ash','muk','rok','tha'] },
+  Human: { a:['Ed','Mar','Tom','Bel','Ger','Ann','Ro','Hal','Wil','Cass','Jon','Pet'],
+           b:['win','tha','as','la','ric','eth','da','mund','ia','bert'] },
+  Drake: { a:['Vex','Zar','Ka','Ssyr','Drax','Ny','Vor','Ash','Ryx','Tza'],
+           b:['ax','ileth','zish','rax','ssa','akk','ith','arr','yx','osk'] },
+};
+
+const QUIRKS = [
+  'Collects teeth. Not their own.',
+  'Insists the moon owes them money.',
+  'Names every weapon "Gerald".',
+  'Whispers apologies to doors before opening them.',
+  'Keeps a funeral speech prepared for every party member. Updates them weekly.',
+  'Refuses to count past six. Says seven is "a scam".',
+  'Sleeps standing up, facing the nearest exit.',
+  'Has eaten something in every dungeon they\'ve entered. Reviews it.',
+  'Carries a small rock from home. The rock has opinions.',
+  'Lies about their height. By one inch.',
+  'Cries during weddings, executions, and well-cooked meals. Same cry.',
+  'Believes all owls are government agents. Has evidence.',
+  'Bows to their reflection. The reflection started it.',
+  'Keeps a tally of every door kicked open. Current count: classified.',
+  'Tips imaginary hat. Lost the real one in "the incident".',
+  'Allergic to prophecy. Sneezes near oracles.',
+  'Hums battle hymns slightly off-key, on purpose, as psychological warfare.',
+  'Writes letters to their enemies\' mothers. Polite ones.',
+  'Has died once before. Won\'t say more. Brings it up constantly.',
+  'Practices their autograph in the dirt before every battle.',
+];
+
+const CATCHPHRASES = [
+  '"Dice are just bones that remember."',
+  '"I\'ve survived worse. Statistically, that can\'t keep being true."',
+  '"Stand behind me. No — further. Further."',
+  '"This is fine. I\'ve rolled worse."',
+  '"My mother said I\'d amount to nothing. Look at me now. Slightly above nothing."',
+  '"Everything is a weapon if you\'re disappointed enough."',
+  '"I don\'t bleed. I leak conviction."',
+  '"Run? Brilliant. I was going to suggest dying, but yours is better."',
+  '"The essence flows through me. Mostly through. Some of it stays."',
+  '"Today is a good day to be someone else\'s problem."',
+  '"I was promised glory. I will accept lunch."',
+  '"Pain is temporary. My grudges are forever."',
+  '"Watch this. If it works, I meant it."',
+  '"The gods watch us. Let\'s give them something to gossip about."',
+  '"I have a plan. The plan is violence. I have one plan."',
+  '"Hold my grudge — I mean my drink. No. I had it right."',
+  '"Fate deals the cards. I bite the dealer."',
+  '"One more battle, then I retire. I\'ve said this 41 times."',
+  '"Fear me, or at least find me mildly concerning."',
+  '"Death came for me once. We exchanged words. It left embarrassed."',
+];
+
+/* Short build-descriptor vocabulary, keyed by tree. Composed as
+   "a {adj of primary} {noun of secondary}" — e.g. FIR+SLY =
+   "a smoldering sneak". */
+const TREE_FLAVOR = {
+  '1HW': { adj:'blade-bonded',  noun:'duelist' },
+  '2HW': { adj:'oversized',     noun:'wrecker' },
+  'DWW': { adj:'two-knived',    noun:'whirlwind' },
+  'RNW': { adj:'far-eyed',      noun:'sharpshooter' },
+  'MGW': { adj:'essence-edged', noun:'spellblade' },
+  'FIR': { adj:'smoldering',    noun:'arsonist' },
+  'WTR': { adj:'cold-blooded',  noun:'tide-caller' },
+  'WND': { adj:'storm-tongued', noun:'galecaller' },
+  'ERT': { adj:'stone-stubborn',noun:'earthshaker' },
+  'LIT': { adj:'dawn-lit',      noun:'mender' },
+  'DRK': { adj:'gloom-soaked',  noun:'dread-merchant' },
+  'ARC': { adj:'reality-adjacent', noun:'meddler' },
+  'BLD': { adj:'self-funded',   noun:'blood-banker' },
+  'SMN': { adj:'never-alone',   noun:'crowd-summoner' },
+  'MRP': { adj:'shape-curious', noun:'changeling' },
+  'MRA': { adj:'bare-knuckled', noun:'fist-philosopher' },
+  'SLY': { adj:'light-fingered',noun:'sneak' },
+  'HNT': { adj:'trap-minded',   noun:'stalker' },
+  'WLD': { adj:'moss-touched',  noun:'beast-whisperer' },
+  'WAR': { adj:'shield-shouldered', noun:'warlord' },
+};
+
+/* ========================= THE 20 TECH TREES =========================
+   Ability format: { key, name, lvl, ap, mem, kind, ...spec }
+   kinds: atk (attack roll vs DEF), autoHit, saveDmg (auto dmg / save),
+   heal, buff, debuff, reaction, summon, special (bespoke handler).
+   reaction costs above 2 AP are capped at 2 by the engine (bank rule).
+   Depth 1 → L1. Depth 2 → L1–L3. Depth 3 (Epic+) → L1–L5.
+   spike:true → Legendary only.
+   BALANCE ANCHOR: 1 AP ≈ 1d6 of effect value. */
+const TREES = {
+'1HW': { name:'One-Handed Weapons', mods:['STR','COR'], hp:4, armor:3, roles:['duelist'], abilities:[
+  { key:'slash',       name:'Slash',        lvl:1, ap:2, mem:1, kind:'atk', dice:'1d10', melee:true, dmgType:'slashing' },
+  { key:'parry',       name:'Parry',        lvl:1, ap:2, mem:2, kind:'reaction', trigger:'incomingMelee', effect:'negate' },
+  { key:'provoke',     name:'Provoke',      lvl:2, ap:1, mem:1, kind:'debuff', who:'enemy', save:'WIT', status:{id:'taunted',turns:1} },
+  { key:'flurry',      name:'Flurry',       lvl:3, ap:4, mem:2, kind:'atk', dice:'1d6', n:3, melee:true },
+  { key:'knockBack',   name:'Knock Back',   lvl:4, ap:2, mem:1, kind:'atk', dice:'1d4', melee:true, onHitSave:{attr:'FRT', push:1} },
+  { key:'riposte',     name:'Riposte',      lvl:5, ap:0, mem:2, kind:'reaction', trigger:'meleeMissedYou', effect:'counter', dice:'1d10' },
+  { key:'killingBlow', name:'Killing Blow', spike:true, ap:6, mem:3, cd:5, kind:'atk', dice:'5d10', melee:true, doubleBelowHalf:true },
+]},
+'2HW': { name:'Two-Handed Weapons', mods:['STR'], hp:5, armor:3, roles:['bruiser'], abilities:[
+  { key:'heavySlash',  name:'Heavy Slash',  lvl:1, ap:2, mem:1, kind:'atk', dice:'1d12', melee:true },
+  { key:'intimidate',  name:'Intimidate',   lvl:1, ap:2, mem:1, kind:'debuff', who:'meleeNearEnemies', save:'WIT', status:{id:'atkDown',turns:4,amt:1} },
+  { key:'pushingStrike',name:'Pushing Strike', lvl:3, ap:3, mem:1, kind:'atk', dice:'1d12', melee:true, onHitSave:{attr:'COR', status:{id:'prone'}} },
+  { key:'sweeping',    name:'Sweeping Attack', lvl:5, ap:2, mem:2, kind:'special', dice:'1d12', melee:true },
+  { key:'earthbreaker',name:'Earthbreaker', spike:true, ap:7, mem:3, cd:5, kind:'special', dice:'6d8' },
+]},
+'DWW': { name:'Dual-Wield Weapons', mods:['COR'], hp:4, armor:2, roles:['striker'], abilities:[
+  { key:'twinStrike',  name:'Twin Strike',  lvl:1, ap:2, mem:1, kind:'atk', dice:'1d6', n:2, melee:true },
+  { key:'swingBlock',  name:"Swing 'n Block", lvl:1, ap:3, mem:1, kind:'atk', dice:'1d6', melee:true, selfBuff:{id:'defUp',turns:1,amt:1} },
+  { key:'twinParry',   name:'Twin Parry',   lvl:3, ap:2, mem:2, kind:'reaction', trigger:'incomingPhysical', effect:'negate' },
+  { key:'eviscerate',  name:'Eviscerate',   lvl:5, ap:4, mem:3, kind:'atk', dice:'4d6', melee:true },
+  { key:'whirlwind',   name:'Whirlwind of Steel', spike:true, ap:7, mem:3, cd:5, kind:'special', dice:'1d6', hits:8 },
+]},
+'RNW': { name:'Ranged Weapons', mods:['COR'], hp:3, armor:2, roles:['striker','ranged'], abilities:[
+  { key:'trickShot',   name:'Trick Shot',   lvl:1, ap:2, mem:1, kind:'atk', dice:'1d8', ignoresCover:true },
+  { key:'reflexShot',  name:'Reflexive Shot', lvl:1, ap:2, mem:1, kind:'reaction', trigger:'enemyMoved', effect:'counter', dice:'1d8' },
+  { key:'doubleShot',  name:'Double Shot',  lvl:2, ap:3, mem:1, cd:1, kind:'atk', dice:'1d8', n:2 },
+  { key:'coverFire',   name:'Cover Fire',   lvl:4, ap:2, mem:1, kind:'buff', target:'ally', status:{id:'covered',turns:1} },
+  { key:'rangersMark', name:"Ranger's Mark", lvl:5, ap:2, mem:2, cd:3, kind:'debuff', who:'enemy', status:{id:'marked',turns:4} },
+  { key:'hailArrows',  name:'Hail of Arrows', spike:true, ap:7, mem:3, cd:5, kind:'saveDmg', who:'allEnemies', dice:'5d8', save:{attr:'COR', half:true} },
+]},
+'MGW': { name:'Magic Weapons', mods:['INT','COR'], hp:3, armor:2, roles:['hybrid'], abilities:[
+  { key:'essenceArmor', name:'Essence Armor', lvl:1, ap:2, mem:1, kind:'buff', target:'self', status:{id:'defUp',turns:99,amt:2} },
+  { key:'zap',          name:'Zap',          lvl:1, ap:2, mem:1, kind:'atk', dice:'1d10', dmgType:'lightning' },
+  { key:'essMissiles',  name:'Essence Missiles', lvl:2, ap:4, mem:2, kind:'autoHit', bolts:3, dice:'1d4', flat:1 },
+  { key:'replenish',    name:'Replenish',    lvl:3, ap:2, mem:1, kind:'reaction', trigger:'allyBelowHalf', effect:'heal', dice:'2d6' },
+  { key:'quakeMGW',     name:'Quake',        lvl:4, ap:4, mem:2, kind:'saveDmg', who:'meleeEnemies', dice:'2d6', addMod:true, save:{attr:'COR', status:{id:'prone'}} },
+  { key:'twincast',     name:'Twincast Cataclysm', spike:true, ap:6, mem:3, cd:5, kind:'special' },
+]},
+'FIR': { name:'Fire', mods:['INT'], hp:2, armor:1, roles:['blaster'], abilities:[
+  { key:'fireBolt',    name:'Fire Bolt',    lvl:1, ap:2, mem:1, kind:'atk', dice:'1d10', dmgType:'fire' },
+  { key:'burningHands',name:'Burning Hands', lvl:1, ap:3, mem:1, kind:'saveDmg', who:'meleeEnemies', dice:'3d6', save:{attr:'COR', half:true}, dmgType:'fire' },
+  { key:'smokeyEscape',name:'Smokey Escape', lvl:1, ap:1, mem:1, cd:2, kind:'special' },
+  { key:'flameShield', name:'Flame Shield', lvl:2, ap:2, mem:1, kind:'reaction', trigger:'incomingMelee', effect:'negate', retort:'1d6' },
+  { key:'scorchRay',   name:'Scorching Ray', lvl:5, ap:4, mem:2, kind:'atk', dice:'1d6', n:3, split:true, dmgType:'fire' },
+  { key:'pyre',        name:'Pyre of the Forgotten', spike:true, ap:7, mem:3, cd:5, kind:'special', dice:'6d8' },
+]},
+'WTR': { name:'Water', mods:['INT'], hp:2, armor:1, roles:['control'], abilities:[
+  { key:'frostArmor',  name:'Frost Armor',  lvl:1, ap:1, mem:1, kind:'buff', target:'ally', status:{id:'defUp',turns:5,amt:2} },
+  { key:'rayFrost',    name:'Ray of Frost', lvl:1, ap:2, mem:1, kind:'atk', dice:'1d8', dmgType:'cold', onHitStatus:{id:'apDown',turns:1,amt:1} },
+  { key:'frostbite',   name:'Frostbite',    lvl:2, ap:2, mem:1, kind:'saveDmg', who:'enemy', dice:'2d6', addMod:true, save:{attr:'FRT', half:true}, dmgType:'cold' },
+  { key:'coneCold',    name:'Cone of Cold', lvl:3, ap:3, mem:2, kind:'saveDmg', who:'meleeNearEnemies', dice:'2d6', addMod:true, save:{attr:'COR', half:true}, dmgType:'cold' },
+  { key:'bindingIce',  name:'Binding Ice',  lvl:5, ap:2, mem:2, cd:3, kind:'debuff', who:'enemy', save:'COR', status:{id:'frozen',turns:2} },
+  { key:'tidewall',    name:'Tidewall', spike:true, ap:6, mem:3, cd:5, kind:'special', dice:'4d6' },
+]},
+'WND': { name:'Wind', mods:['INT'], hp:2, armor:1, roles:['blaster','control'], abilities:[
+  { key:'shockTouch',  name:'Shocking Touch', lvl:1, ap:2, mem:1, kind:'atk', dice:'1d8', melee:true, dmgType:'lightning' },
+  { key:'bolt',        name:'Bolt',         lvl:1, ap:3, mem:2, kind:'atk', dice:'2d6', dmgType:'lightning' },
+  { key:'airShield',   name:'Air Shield',   lvl:1, ap:1, mem:1, kind:'reaction', trigger:'incomingAttack', effect:'negate' },
+  { key:'windWhip',    name:'Wind Whip',    lvl:3, ap:3, mem:2, kind:'saveDmg', who:'upTo2MeleeNear', dice:'2d6', addMod:true, save:{attr:'COR', status:{id:'prone'}} },
+  { key:'lightningBolt', name:'Lightning Bolt', lvl:5, ap:3, mem:3, cd:2, kind:'saveDmg', who:'upTo2Line', dice:'5d6', addMod:true, save:{attr:'FRT', status:{id:'stunned',turns:1}}, dmgType:'lightning' },
+  { key:'tempest',     name:"Tempest's Verdict", spike:true, ap:7, mem:3, cd:5, kind:'special' },
+]},
+'ERT': { name:'Earth', mods:['INT'], hp:3, armor:2, roles:['control'], abilities:[
+  { key:'launchRock',  name:'Launch Rock',  lvl:1, ap:2, mem:1, kind:'atk', dice:'1d8', dmgType:'blunt' },
+  { key:'fortify',     name:'Fortify',      lvl:1, ap:1, mem:1, kind:'buff', target:'ally', tempHP:5 },
+  { key:'rockFist',    name:'Rock Fist',    lvl:2, ap:1, mem:2, kind:'buff', target:'self', status:{id:'meleeDmgDice',turns:5,dice:'1d6'} },
+  { key:'groundPound', name:'Ground Pound', lvl:3, ap:3, mem:2, kind:'saveDmg', who:'meleeEnemies', dice:'2d6', addMod:true, save:{attr:'COR', status:{id:'prone'}} },
+  { key:'quakeERT',    name:'Quake',        lvl:5, ap:4, mem:3, cd:4, kind:'saveDmg', who:'others', dice:'2d6', addMod:true, save:{attr:'COR', status:{id:'prone'}} },
+  { key:'contDrift',   name:'Continental Drift', spike:true, ap:6, mem:3, cd:5, kind:'special', dice:'3d6' },
+]},
+'LIT': { name:'Light', mods:['FAI'], hp:2, armor:1, roles:['healer'], abilities:[
+  { key:'minorHeal',   name:'Minor Healing Light', lvl:1, ap:2, mem:1, cd:2, kind:'heal', dice:'1d8', addMod:true, revive:true },
+  { key:'burningLight',name:'Burning Light', lvl:1, ap:2, mem:1, kind:'atk', dice:'1d10', dmgType:'light' },
+  { key:'encourage',   name:'Encourage',    lvl:1, ap:1, mem:1, kind:'buff', target:'ally', status:{id:'advNext',turns:9} },
+  { key:'dancingLights', name:'Dancing Lights', lvl:2, ap:1, mem:1, kind:'debuff', who:'enemy', save:'WIT', status:{id:'distracted',turns:3} },
+  { key:'dawn',        name:'Dawn',         lvl:4, ap:4, mem:3, cd:5, kind:'special' },
+  { key:'dawnsong',    name:'Dawnsong', spike:true, ap:7, mem:3, cd:5, kind:'special', dice:'4d6' },
+]},
+'DRK': { name:'Dark', mods:['INT','FAI'], hp:2, armor:1, roles:['debuffer'], abilities:[
+  { key:'voidTouch',   name:'Void Touch',   lvl:1, ap:2, mem:1, kind:'atk', dice:'1d10', dmgType:'dark', onHitStatus:{id:'defDown',turns:2,amt:1} },
+  { key:'doubt',       name:'Doubt',        lvl:1, ap:1, mem:1, kind:'debuff', who:'meleeNearEnemies', save:'FAI', status:{id:'saveDown',turns:5,amt:1} },
+  { key:'voidStep',    name:'Void Step',    lvl:1, ap:1, mem:1, kind:'reaction', trigger:'meleeMissedYou', effect:'shift' },
+  { key:'blind',       name:'Blind',        lvl:2, ap:2, mem:2, kind:'debuff', who:'enemy', save:'WIT', status:{id:'blinded',turns:2} },
+  { key:'fear',        name:'Fear',         lvl:5, ap:3, mem:2, kind:'debuff', who:'allEnemies', save:'WIT', status:{id:'feared',turns:2} },
+  { key:'longNight',   name:'The Long Night', spike:true, ap:7, mem:3, cd:5, kind:'special' },
+]},
+'ARC': { name:'Arcane', mods:['INT'], hp:2, armor:1, roles:['control'], abilities:[
+  { key:'essMissilesA', name:'Essence Missiles', lvl:1, ap:3, mem:1, kind:'autoHit', bolts:3, dice:'1d4', flat:1 },
+  { key:'charm',       name:'Charm',        lvl:1, ap:2, mem:1, kind:'debuff', who:'enemy', save:'WIT', status:{id:'charmed',turns:2} },
+  { key:'essWeapon',   name:'Essence Weapon', lvl:2, ap:2, mem:1, kind:'buff', target:'self', status:{id:'phantomBlade',turns:3,dice:'1d6'} },
+  { key:'sleep',       name:'Sleep',        lvl:3, ap:2, mem:1, kind:'debuff', who:'enemy', save:'WIT', status:{id:'asleep',turns:9} },
+  { key:'counterspell',name:'Counterspell', lvl:4, ap:2, mem:2, kind:'reaction', trigger:'enemyAbility', effect:'counterspell' },
+  { key:'severance',   name:'Severance', spike:true, ap:6, mem:3, cd:5, kind:'debuff', who:'enemy', save:'WIT', status:{id:'removed',turns:2} },
+]},
+'BLD': { name:'Blood', mods:['FAI','FRT'], hp:4, armor:1, roles:['drain'], abilities:[
+  { key:'falseLife',   name:'False Life',   lvl:1, ap:1, mem:1, kind:'buff', target:'ally', tempHPDice:'2d4' },
+  { key:'offering',    name:'Offering',     lvl:1, ap:1, mem:1, kind:'special' },
+  { key:'lifeTransfer',name:'Life Transfer', lvl:3, ap:1, mem:2, kind:'special', dice:'2d6' },
+  { key:'bloodLust',   name:'Blood Lust',   lvl:3, ap:2, mem:2, kind:'debuff', who:'enemy', save:'WIT', status:{id:'bloodlust',turns:1} },
+  { key:'siphon',      name:'Siphon',       lvl:5, ap:2, mem:2, cd:3, kind:'special', dice:'2d6' },
+  { key:'crimsonPact', name:'Crimson Pact', spike:true, ap:7, mem:3, cd:5, kind:'special', dice:'4d6' },
+]},
+'SMN': { name:'Summoning', mods:['INT','FAI'], hp:2, armor:1, roles:['summoner'], abilities:[
+  { key:'familiar',    name:'Conjure Familiar', lvl:1, ap:1, mem:1, kind:'buff', target:'self', status:{id:'atkUp',turns:99,amt:1} },
+  { key:'summonAnimal',name:'Summon Animal', lvl:1, ap:3, mem:2, kind:'summon', turns:5, unit:{name:'Beast', hp:8, def:12, atkDice:'1d6', atkBonus:2} },
+  { key:'tentacle',    name:'Underworld Tentacle', lvl:2, ap:2, mem:2, kind:'summon', turns:4, unit:{name:'Tentacle', hp:6, def:11, atkDice:'1d6', atkBonus:1, rider:{save:'COR', status:{id:'prone'}}} },
+  { key:'elemental',   name:'Conjure Elemental', lvl:3, ap:3, mem:2, kind:'summon', turns:5, unit:{name:'Elemental', hp:10, def:13, atkDice:'1d8', atkBonus:2} },
+  { key:'absorb',      name:'Absorb',       lvl:4, ap:2, mem:2, kind:'reaction', trigger:'physDamage', effect:'absorb', dc:12 },
+  { key:'convocation', name:'Convocation', spike:true, ap:7, mem:3, cd:99, kind:'summon', turns:99,
+    unit:{name:'Dragon Whelp', hp:14, def:14, atkDice:'1d8', atkBonus:3, attacks:2, breath:{dice:'2d6', cd:3}} },
+]},
+'MRP': { name:'Morphology', mods:['FRT','INT'], hp:4, armor:1, roles:['shapeshifter'], abilities:[
+  { key:'unstable',    name:'Unstable Transformation', lvl:1, ap:2, mem:1, kind:'buff', target:'self', tempHP:4, status:{id:'beastForm',turns:3,dice:'1d8'} },
+  { key:'morphMissiles', name:'Morphing Missiles', lvl:1, ap:2, mem:1, kind:'special', dice:'1d8' },
+  { key:'camouflage',  name:'Camouflage',   lvl:2, ap:1, mem:1, kind:'buff', target:'self', status:{id:'hidden',turns:9} },
+  { key:'embiggen',    name:'Embiggen',     lvl:3, ap:3, mem:2, kind:'buff', target:'self', status:{id:'embiggened',turns:3} },
+  { key:'polymorph',   name:'Polymorph',    lvl:5, ap:3, mem:2, cd:4, kind:'debuff', who:'enemy', save:'WIT', status:{id:'polymorphed',turns:2} },
+  { key:'otherSelf',   name:'The Other Self', spike:true, ap:6, mem:3, cd:5, kind:'special', dice:'2d6' },
+]},
+'MRA': { name:'Martial Arts', mods:['STR','COR'], hp:4, armor:2, roles:['striker'], abilities:[
+  { key:'fistFlurry',  name:'Flurry of Fists', lvl:1, ap:2, mem:1, kind:'atk', dice:'1d6', n:2, melee:true },
+  { key:'roundhouse',  name:'Roundhouse Kick', lvl:1, ap:3, mem:2, kind:'atk', dice:'1d6', n:2, melee:true, onHitSave:{attr:'COR', push:1, status:{id:'prone'}} },
+  { key:'deflect',     name:'Deflect',      lvl:2, ap:2, mem:2, kind:'reaction', trigger:'incomingMelee', effect:'redirect' },
+  { key:'spiritWeapon',name:'Spirit Weapon', lvl:2, ap:2, mem:1, kind:'buff', target:'self', status:{id:'phantomBlade',turns:5,dice:'1d8'} },
+  { key:'falconDive',  name:'Falcon Dive',  lvl:5, ap:5, mem:3, kind:'special', dice:'1d6' },
+  { key:'thousandHands', name:'One Thousand Hands', spike:true, ap:6, mem:3, cd:5, kind:'special', dice:'1d6', hits:5 },
+]},
+'SLY': { name:'Sly', mods:['COR','WIT'], hp:3, armor:2, roles:['assassin'],
+  feature:'Sneak Attack: +1d6 once per turn vs a target engaged by an ally or unaware.',
+  abilities:[
+  { key:'adrenaline',  name:'Adrenaline Rush', lvl:1, ap:0, mem:1, cd:3, kind:'special' },
+  { key:'precThrow',   name:'Precision Throw', lvl:1, ap:2, mem:1, kind:'atk', dice:'1d4', sneak:true },
+  { key:'suckerPunch', name:'Sucker Punch', lvl:1, ap:1, mem:1, kind:'reaction', trigger:'adjEnemyAttacksOther', effect:'counter', dice:'1d4', riderSave:{attr:'COR', status:{id:'dazed',turns:9}} },
+  { key:'hamstring',   name:'Hamstring',    lvl:3, ap:2, mem:2, kind:'atk', dice:'1d4', melee:true, onHitSave:{attr:'COR', status:{id:'crippled',turns:2}} },
+  { key:'serrated',    name:'Serrated Blade', lvl:4, ap:2, mem:2, kind:'atk', dice:'2d4', melee:true, onHitSave:{attr:'FRT', status:{id:'bleeding',turns:3}} },
+  { key:'theTrick',    name:'The Trick', spike:true, ap:6, mem:3, cd:5, kind:'special', dice:'6d6' },
+]},
+'HNT': { name:'Hunting', mods:['COR','WIT'], hp:4, armor:2, roles:['ranged','support'], abilities:[
+  { key:'firstAid',    name:'First Aid',    lvl:1, ap:2, mem:1, kind:'heal', dice:'1d8', modAttr:'WIT', adjacent:true },
+  { key:'targetedAtk', name:'Targeted Attack', lvl:1, ap:2, mem:1, kind:'atk', dice:'1d8', onHitSave:{attr:'FRT', status:{id:'crippled',turns:1}} },
+  { key:'huntZone',    name:'Reflexive Shot', lvl:1, ap:3, mem:1, cd:2, kind:'special', dice:'1d8' },
+  { key:'applyPoison', name:'Apply Poison', lvl:3, ap:2, mem:1, kind:'buff', target:'self', status:{id:'weaponPoison',turns:3,dice:'1d4'} },
+  { key:'deadlyCut',   name:'Deadly Cut',   lvl:5, ap:2, mem:1, kind:'special', dice:'1d8' },
+  { key:'packMaster',  name:'Pack Master', spike:true, ap:6, mem:3, cd:5, kind:'special' },
+]},
+'WLD': { name:'Wild', mods:['WIT','INT'], hp:3, armor:1, roles:['control'], abilities:[
+  { key:'snare',       name:'Snare',        lvl:1, ap:2, mem:1, kind:'debuff', who:'upTo2Enemies', save:'COR', status:{id:'rooted',turns:2} },
+  { key:'barkSkin',    name:'Bark Skin',    lvl:1, ap:1, mem:1, kind:'buff', target:'self', status:{id:'defUp',turns:99,amt:2} },
+  { key:'acidSplash',  name:'Acid Splash',  lvl:2, ap:2, mem:1, kind:'saveDmg', who:'meleeEnemies', dice:'3d4', save:{attr:'FRT', half:true}, dmgType:'acid' },
+  { key:'mending',     name:'Mending',      lvl:4, ap:2, mem:1, kind:'heal', dice:'3d6' },
+  { key:'primalRoar',  name:'Primal Roar',  lvl:4, ap:1, mem:1, kind:'debuff', who:'meleeNearEnemies', save:'WIT', status:{id:'frightened',turns:2} },
+  { key:'wildAnswer',  name:'The Wild Answer', spike:true, ap:7, mem:3, cd:5, kind:'special', dice:'4d6' },
+]},
+'WAR': { name:'Warfare', mods:['STR'], hp:5, armor:4, roles:['tank','leader'], abilities:[
+  { key:'battleCry',   name:'Battle Cry',   lvl:1, ap:1, mem:1, cd:5, kind:'buff', target:'allies', status:{id:'dmgUp',turns:4,amt:1} },
+  { key:'shieldBash',  name:'Shield Bash',  lvl:1, ap:2, mem:1, kind:'atk', dice:'1d6', melee:true, onHitSave:{attr:'COR', status:{id:'dazed',turns:9}} },
+  { key:'cleave',      name:'Cleave',       lvl:1, ap:3, mem:2, kind:'special', dice:'1d10' },
+  { key:'warriorRage', name:'Warrior Rage', lvl:2, ap:2, mem:1, kind:'buff', target:'self', status:{id:'raging',turns:3} },
+  { key:'shieldWall',  name:'Shield Wall',  lvl:5, ap:3, mem:2, kind:'buff', target:'self', status:{id:'shieldWall',turns:1} },
+  { key:'finalStand',  name:'Final Stand', spike:true, ap:7, mem:3, cd:5, kind:'special' },
+]},
+};
+
+/* Convenience: ability lookup + which kinds count as "damage" for the
+   memorization AI. */
+function treeAbility(treeKey, abKey){
+  return TREES[treeKey].abilities.find(a => a.key === abKey);
+}
+const DAMAGE_KINDS = { atk:1, autoHit:1, saveDmg:1 };
+const DAMAGE_SPECIALS = { sweeping:1, earthbreaker:1, whirlwind:1, pyre:1, tidewall:1,
+  tempest:1, contDrift:1, morphMissiles:1, falconDive:1, thousandHands:1, theTrick:1,
+  siphon:1, crimsonPact:1, deadlyCut:1, wildAnswer:1, cleave:1, dawnsong:0, lightningBolt:1 };
+function isDamageAbility(ab){
+  return !!(DAMAGE_KINDS[ab.kind] || DAMAGE_SPECIALS[ab.key]);
+}
+function isHealAbility(ab){
+  return ab.kind === 'heal' || ab.key === 'dawnsong' || ab.key === 'lifeTransfer';
+}
+
+/* ====================== CHARACTER GENERATION =========================
+   The pack-opening sequence. Order matters (rarity is computed from the
+   raw rolls BEFORE bonuses): ancestry -> background -> 7x(2d4-5) ->
+   trees -> attribute assignment -> rarity -> derived stats -> memory. */
+
+let CHAR_SEQ = 1;
+
+function addCappedBonus(attrs, attr, amt, log){
+  // +3 cap; excess +1 spills to the next-highest attribute below the cap.
+  for (let i = 0; i < amt; i++){
+    let tgt = attr;
+    if (attrs[tgt] >= 3){
+      const spill = ATTRS.filter(a => attrs[a] < 3).sort((a, b) => attrs[b] - attrs[a])[0];
+      if (!spill){ if (log) log.push(`+1 ${attr} lost to the cap (everything is already +3)`); continue; }
+      if (log) log.push(`+1 ${attr} spills to ${spill} (cap)`);
+      tgt = spill;
+    }
+    attrs[tgt] += 1;
+  }
+  if (amt < 0) attrs[attr] = Math.max(-5, attrs[attr] + amt); // negatives apply straight
+}
+
+function rarityFromRolls(total, values){
+  const plus3s = values.filter(v => v === 3).length;
+  if (plus3s >= RARITY.legendaryTriplePlus3) return 'legendary';
+  const t = RARITY.thresholds;
+  if (total >= t.legendary) return 'legendary';
+  if (total >= t.epic) return 'epic';
+  if (total >= t.rare) return 'rare';
+  if (total >= t.uncommon) return 'uncommon';
+  return 'common';
+}
+
+function makeName(rng, ancestry){
+  const p = NAME_POOLS[ancestry];
+  let n = rng.pick(p.a) + rng.pick(p.b);
+  return n.charAt(0).toUpperCase() + n.slice(1);
+}
+
+function buildDescriptor(rng, trees, offStat, attrs){
+  const f0 = TREE_FLAVOR[trees[0].key];
+  let d;
+  if (trees.length === 2){
+    const f1 = TREE_FLAVOR[trees[1].key];
+    d = `a ${f0.adj} ${f1.noun}`;
+  } else {
+    d = trees[0].depth >= 2 ? `a committed ${f0.noun}` : `a fledgling ${f0.noun}`;
+  }
+  if (offStat){
+    const govern = TREES[trees[0].key].mods;
+    const best = govern.reduce((a, b) => attrs[a] >= attrs[b] ? a : b);
+    if (attrs[best] <= 0) d += ` (${best} ${fmtMod(attrs[best])}, undeterred)`;
+  }
+  return d;
+}
+
+function generateCharacter(rng, opts = {}){
+  const gen = {};  // reveal script data
+
+  // --- ancestry ---
+  const ancestry = rng.pick(Object.keys(ANCESTRIES));
+  gen.ancestry = ancestry;
+
+  // --- background ---
+  const bg = rng.pick(BACKGROUNDS);
+  const bgAttr = rng.pick([bg[1], bg[2]]);
+  gen.background = bg[0]; gen.bgAttr = bgAttr; gen.bgPair = [bg[1], bg[2]];
+
+  // --- the seven raw rolls: 2d4 - 5 each (this is the Raw Essence) ---
+  const rollDetails = [], values = [];
+  for (let i = 0; i < 7; i++){
+    const r = rng.roll(2, 4);
+    rollDetails.push(r.dice);
+    values.push(r.total - 5);
+  }
+  // difficulty bias (enemy generation only): nudge individual rolls
+  if (opts.bias){
+    const idx = rng.shuffle([0,1,2,3,4,5,6]).slice(0, Math.abs(opts.bias));
+    for (const i of idx) values[i] = Math.max(-3, Math.min(3, values[i] + Math.sign(opts.bias)));
+  }
+  const rollTotal = values.reduce((s, v) => s + v, 0);
+  gen.rollDetails = rollDetails; gen.values = values.slice(); gen.rollTotal = rollTotal;
+
+  // --- rarity (emergent, before bonuses) ---
+  const rarity = rarityFromRolls(rollTotal, values);
+  const rdata = RARITY.data[rarity];
+  gen.rarity = rarity;
+  gen.plus3s = values.filter(v => v === 3).length;
+
+  // --- tree investment: 2 feature points ---
+  const offStat = rng.random() < GEN.offStatChance;
+  const treeKeys = Object.keys(TREES);
+  const split = rng.random() < GEN.splitChance;
+  let trees;
+  const primaryKey = rng.pick(treeKeys);
+  if (split){
+    let secondKey;
+    if (!offStat && rng.random() < GEN.secondTreeSynergy){
+      // prefer a second tree sharing a governing attribute with the primary
+      const prim = new Set(TREES[primaryKey].mods);
+      const synerg = treeKeys.filter(k => k !== primaryKey && TREES[k].mods.some(m => prim.has(m)));
+      secondKey = synerg.length ? rng.pick(synerg) : rng.pick(treeKeys.filter(k => k !== primaryKey));
+    } else {
+      secondKey = rng.pick(treeKeys.filter(k => k !== primaryKey));
+    }
+    trees = [{ key:primaryKey, depth:1 }, { key:secondKey, depth:1 }];
+  } else {
+    trees = [{ key:primaryKey, depth:2 }];
+  }
+  if (rdata.forceDepth) trees[0].depth = rdata.forceDepth;  // Epic/Legendary
+  gen.trees = trees.map(t => ({ ...t })); gen.offStat = offStat;
+
+  // --- assign rolled values to attributes ---
+  // favor the primary tree's governing attributes (highest rolls there),
+  // with noise; off-stat pulls assign completely at random.
+  const sorted = values.slice().sort((a, b) => b - a);
+  let order;
+  if (offStat){
+    order = rng.shuffle(ATTRS);
+  } else {
+    const prim = rng.shuffle(TREES[trees[0].key].mods.slice());
+    const sec = trees[1] ? TREES[trees[1].key].mods.filter(m => !prim.includes(m)) : [];
+    const rest = rng.shuffle(ATTRS.filter(a => !prim.includes(a) && !sec.includes(a)));
+    order = [...prim, ...sec, ...rest];
+    // noise: a couple of adjacent swaps so builds aren't laser-optimal
+    for (let s = 0; s < 2; s++){
+      if (rng.random() < 0.45){
+        const i = rng.int(0, order.length - 2);
+        [order[i], order[i+1]] = [order[i+1], order[i]];
+      }
+    }
+  }
+  const attrs = {};
+  order.forEach((a, i) => { attrs[a] = sorted[i]; });
+
+  // --- ancestry bonuses (capped at +3, spill) ---
+  const bonusLog = [];
+  const anc = ANCESTRIES[ancestry];
+  if (anc.bonuses === 'twoRandom'){
+    const two = rng.shuffle(ATTRS).slice(0, 2);
+    gen.humanBonus = two;
+    for (const a of two) addCappedBonus(attrs, a, 1, bonusLog);
+  } else {
+    for (const [a, amt] of Object.entries(anc.bonuses)) addCappedBonus(attrs, a, amt, bonusLog);
+  }
+  // --- background bonus ---
+  addCappedBonus(attrs, bgAttr, 1, bonusLog);
+  gen.bonusLog = bonusLog;
+
+  // --- known abilities from tree depth ---
+  const depthLvl = { 1:1, 2:3, 3:5 };
+  const known = [];
+  for (const t of trees){
+    for (const ab of TREES[t.key].abilities){
+      if (ab.spike){ if (rdata.spike && t === trees[0]) known.push({ tree:t.key, ab }); continue; }
+      if (ab.lvl <= depthLvl[t.depth]) known.push({ tree:t.key, ab });
+    }
+  }
+  // Rare: +1 bonus ability known, from above current access
+  if (rdata.bonusAbility){
+    const have = new Set(known.map(k => k.tree + ':' + k.ab.key));
+    let pool = [];
+    for (const t of trees){
+      pool = pool.concat(TREES[t.key].abilities
+        .filter(ab => !ab.spike && !have.has(t.key + ':' + ab.key))
+        .map(ab => ({ tree:t.key, ab })));
+    }
+    if (!pool.length){ // fully maxed: borrow a random L1 from another tree
+      const other = rng.pick(treeKeys.filter(k => !trees.some(t => t.key === k)));
+      pool = TREES[other].abilities.filter(ab => ab.lvl === 1).map(ab => ({ tree:other, ab }));
+    }
+    const bonus = rng.pick(pool);
+    bonus.bonus = true;
+    known.push(bonus);
+    gen.bonusKnown = bonus;
+  }
+
+  // --- memorization (greedy by tree AI role) ---
+  const memoryPool = rdata.mem;
+  const roles = [];
+  for (const t of trees) for (const r of TREES[t.key].roles) roles.push({ role:r, w:t.depth });
+  const isHealerish = roles.some(r => r.role === 'healer' || r.role === 'support');
+
+  function memScore(k){
+    const ab = k.ab;
+    if (ab.spike) return 1000;
+    if (isHealerish && isHealAbility(ab)) return 900;
+    if (isDamageAbility(ab)) return 500 + ab.lvl * 12 - ab.mem * 2;
+    if (isHealAbility(ab)) return 420;
+    if (ab.kind === 'reaction') return 450;
+    return 300 + ab.lvl * 10;
+  }
+  const memorized = [];
+  let memLeft = memoryPool;
+  const take = k => { memorized.push(k); memLeft -= k.ab.mem; };
+  // guarantee a damage option first (cheapest memory among the best)
+  const dmgs = known.filter(k => isDamageAbility(k.ab)).sort((a, b) => a.ab.mem - b.ab.mem || b.ab.lvl - a.ab.lvl);
+  if (dmgs.length && dmgs[0].ab.mem <= memLeft) take(dmgs[0]);
+  // rest greedy by score; reactions beyond the first deprioritized
+  let reactions = memorized.filter(k => k.ab.kind === 'reaction').length;
+  const rest = known.filter(k => !memorized.includes(k)).sort((a, b) => memScore(b) - memScore(a));
+  for (const k of rest){
+    if (k.ab.mem > memLeft) continue;
+    if (k.ab.kind === 'reaction' && reactions >= 1) continue;
+    take(k);
+    if (k.ab.kind === 'reaction') reactions++;
+  }
+  const memUsed = memorized.reduce((s, k) => s + k.ab.mem, 0);
+  if (memUsed > memoryPool) throw new Error('memory pool exceeded at generation');
+
+  // --- derived stats ---
+  const primTree = TREES[trees[0].key];
+  const maxHp = GEN.baseHP + attrs.FRT + primTree.hp + rdata.hp;
+  const def = GEN.baseDEF + attrs.COR + primTree.armor;
+
+  const c = {
+    id: 'c' + (CHAR_SEQ++),
+    name: makeName(rng, ancestry),
+    title: rarity === 'legendary' ? rng.pick(TITLES) : null,
+    ancestry, background: bg[0],
+    attrs, rollDetails, values, rollTotal, rarity,
+    trees, roles,
+    maxHp: Math.max(1, maxHp), def,
+    init: attrs.WIT,
+    memoryPool, memUsed,
+    known, memorized,
+    atkBonus: rdata.atkBonus || 0,
+    quirk: rng.pick(QUIRKS),
+    phrase: rng.pick(CATCHPHRASES),
+    descriptor: buildDescriptor(rng, trees, offStat, attrs),
+    sneakFeature: trees.some(t => t.key === 'SLY'),
+    gen,
+  };
+  c.displayName = c.title ? `${c.name} ${c.title}` : c.name;
+  return c;
+}
+
+/* ========================== COMBAT ENGINE ============================
+   AP economy (v0.5): 5 AP/turn, bank up to 2 (max 7 on a turn).
+   Range bands on a 0..8 track: |posA-posB| 0 = Melee, 1 = Near, 2+ = Far.
+   Moving one band costs 1 AP. Basic attack 2 AP. Reactions cost banked
+   AP (capped at 2), one per round. */
+
+const AP_BASE = 5, BANK_CAP = 2, AP_MAX = 7, SAVE_DC = 13, MAX_ROUNDS = 40;
+const BAND_NAMES = d => d <= 0 ? 'Melee' : d === 1 ? 'Near' : 'Far';
+
+const STATUS_LABEL = {
+  prone:'Prone', taunted:'Taunted', atkDown:'Shaken', atkUp:'Emboldened',
+  defUp:'Warded', defDown:'Exposed', dmgUp:'Bolstered', distracted:'Distracted',
+  dazed:'Dazed', blinded:'Blinded', feared:'Feared', frightened:'Frightened',
+  rooted:'Rooted', frozen:'Frozen', stunned:'Stunned', crippled:'Crippled',
+  asleep:'Asleep', charmed:'Charmed', bloodlust:'Bloodlusted', bleeding:'Bleeding',
+  marked:'Marked', covered:'Covered', hidden:'Hidden', removed:'Severed',
+  polymorphed:'Polymorphed', apDown:'Chilled', raging:'Raging', embiggened:'Embiggened',
+  shieldWall:'Shield Wall', beastForm:'Beast Form', meleeDmgDice:'Stone Fists',
+  weaponPoison:'Poisoned Blades', phantomBlade:'Phantom Blade', advNext:'Encouraged',
+  offeringAdv:'Blood-Bold', otherSelf:'The Other Self', saveDown:'Doubting',
+  slowed:'Slowed', apDebt:'Winded', apBoost:'Quickened', smokeDodge:'Smoke-Veiled',
+};
+
+function makeUnit(char, side){
+  const frontRoles = ['duelist','bruiser','tank','assassin','shapeshifter','striker','drain','hybrid'];
+  const isRanged = char.roles.some(r => r.role === 'ranged' || r.role === 'blaster' ||
+    r.role === 'control' || r.role === 'debuffer' || r.role === 'healer' ||
+    r.role === 'summoner' || r.role === 'support' || r.role === 'leader');
+  const isFront = char.roles.some(r => frontRoles.includes(r.role)) && !char.roles.some(r => r.role === 'ranged');
+  const pos = side === 0 ? (isFront ? 3 : 2) : (isFront ? 5 : 6);
+  return {
+    uid: char.id + '_' + side, char, side, name: char.displayName,
+    pos, hp: char.maxHp, maxHp: char.maxHp, tempHp: 0,
+    ap: 0, bank: 0, statuses: [], cds: {}, reactionUsed: false,
+    downed: false, dead: false, stable: false, deathF: 0, deathS: 0,
+    turnCount: 0, dmg: 0, heal: 0, kills: 0,
+    isSummon: false, acted: false, sneakUsed: false,
+    ranged: isRanged && !isFront,
+  };
+}
+function makeSummon(owner, spec, turns, state){
+  state.summonSeq = (state.summonSeq || 0) + 1;
+  return {
+    uid: 'sum' + state.summonSeq, char: null, side: owner.side,
+    name: spec.name + ' (' + owner.name.split(' ')[0] + "'s)",
+    pos: owner.pos, hp: spec.hp, maxHp: spec.hp, tempHp: 0,
+    ap: 0, bank: 0, statuses: [], cds: {}, reactionUsed: false,
+    downed: false, dead: false, stable: false, deathF: 0, deathS: 0,
+    turnCount: 0, dmg: 0, heal: 0, kills: 0,
+    isSummon: true, owner: owner.uid, spec, turnsLeft: turns,
+    acted: false, sneakUsed: false, ranged: false,
+  };
+}
+
+/* ---------- queries ---------- */
+function dist(a, b){ return Math.abs(a.pos - b.pos); }
+function isActive(u){ return !u.dead && !u.stable && !u.downed; }
+function unitsOf(state, side){ return state.units.filter(u => u.side === side && isActive(u)); }
+function enemiesOf(state, u){ return unitsOf(state, 1 - u.side).filter(t => !hasStatus(t, 'removed') && !hasStatus(t, 'polymorphed')); }
+function alliesOf(state, u){ return unitsOf(state, u.side).filter(a => a !== u); }
+function fwd(u){ return u.side === 0 ? 1 : -1; }   // direction toward the enemy line
+function hasStatus(u, id){ return u.statuses.some(s => s.id === id); }
+function getStatus(u, id){ return u.statuses.find(s => s.id === id); }
+function addStatus(state, u, st, src){
+  const cur = getStatus(u, st.id);
+  if (cur){ cur.turns = Math.max(cur.turns, st.turns || 1); if (st.amt) cur.amt = Math.max(cur.amt||0, st.amt); }
+  else u.statuses.push({ ...st, turns: st.turns == null ? 1 : st.turns, src: src ? src.uid : null });
+}
+function dropStatus(u, id){ u.statuses = u.statuses.filter(s => s.id !== id); }
+function unitByUid(state, uid){ return state.units.find(u => u.uid === uid); }
+function meleeMod(u){ return u.char ? Math.max(u.char.attrs.STR, u.char.attrs.COR) : (u.spec.atkBonus || 0); }
+function treeMod(u, treeKey){
+  if (!u.char) return 0;
+  const ov = treeKey && TREES[treeKey].mods;
+  return Math.max(...ov.map(a => u.char.attrs[a]));
+}
+function attr(u, a){ return u.char ? u.char.attrs[a] : 1; }
+
+/* aggregated modifiers from statuses + battle effects */
+function getMods(state, u){
+  const m = { atk: 0, def: 0, dmg: 0, save: 0, moveMult: 1, noMove: false, disAtk: false };
+  if (u.char) m.atk += u.char.atkBonus;
+  for (const s of u.statuses){
+    switch (s.id){
+      case 'atkUp': m.atk += s.amt || 1; break;
+      case 'atkDown': m.atk -= s.amt || 1; break;
+      case 'distracted': case 'feared': case 'frightened': m.atk -= 1; break;
+      case 'defUp': m.def += s.amt || 1; break;
+      case 'defDown': m.def -= s.amt || 1; break;
+      case 'shieldWall': m.def += 2; break;
+      case 'raging': m.def -= 1; m.dmg += 2; break;
+      case 'embiggened': m.def -= 1; m.dmg += 2; break;
+      case 'dmgUp': m.dmg += s.amt || 1; break;
+      case 'otherSelf': m.def += 2; break;
+      case 'saveDown': m.save -= s.amt || 1; break;
+      case 'crippled': case 'slowed': m.moveMult *= 2; break;
+      case 'rooted': case 'frozen': m.noMove = true; break;
+      case 'blinded': m.disAtk = true; break;
+    }
+  }
+  for (const e of state.effects){
+    if (e.id === 'earthGround' && e.victims === u.side) m.moveMult *= 2;
+    if (e.id === 'longNight' && e.victims === u.side) m.disAtk = true;
+  }
+  return m;
+}
+function effDef(state, u, opts = {}){
+  const base = u.char ? GEN.baseDEF + u.char.attrs.COR + TREES[u.char.trees[0].key].armor : u.spec.def;
+  if (opts.ignoresCover) return base;            // Trick Shot: ignore cover/ability DEF
+  return base + getMods(state, u).def;
+}
+function cantAct(u){
+  return hasStatus(u, 'asleep') || hasStatus(u, 'polymorphed') || hasStatus(u, 'removed');
+}
+
+/* ---------- logging ---------- */
+function L(state, cls, text, beat){ state.events.push({ type:'log', cls, text, beat: !!beat }); }
+function snap(state){
+  state.events.push({ type:'snapshot', units: state.units.map(u => ({
+    uid: u.uid, name: u.name, side: u.side, hp: u.hp, maxHp: u.maxHp, tempHp: u.tempHp,
+    pos: u.pos, bank: u.bank, downed: u.downed, dead: u.dead, stable: u.stable, isSummon: u.isSummon,
+    statuses: u.statuses.map(s => STATUS_LABEL[s.id] || s.id),
+  })) });
+}
+function violate(state, msg){ state.violations.push(msg); L(state, 'death', '!! RULE VIOLATION: ' + msg); }
+
+const QUIPS_MISS = [
+  'The target is unimpressed.', 'A bold choice of nothing.', 'The wind apologizes on their behalf.',
+  'Somewhere, a bard refuses to write this down.', 'The dice have opinions today.',
+];
+
+/* ---------- dice in combat ---------- */
+function rollDamage(state, who, diceStr, bonus, opts = {}){
+  let r = state.rng.rollStr(diceStr);
+  let detail = fmtDice(r.dice);
+  let total = r.total;
+  if (opts.crit || opts.doubled){
+    const r2 = state.rng.rollStr(diceStr);
+    detail += '+' + fmtDice(r2.dice);
+    total += r2.total;
+  }
+  for (const ex of (opts.extraDice || [])){
+    const re = state.rng.rollStr(ex.dice);
+    detail += `+${fmtDice(re.dice)}(${ex.label})`;
+    total += re.total;
+    if (opts.crit || opts.doubled){
+      const re2 = state.rng.rollStr(ex.dice);
+      detail += '+' + fmtDice(re2.dice);
+      total += re2.total;
+    }
+  }
+  total += bonus || 0;
+  return { total: Math.max(0, total), detail: detail + (bonus ? fmtMod(bonus) : '') };
+}
+
+function savingThrow(state, u, attrName, dc, label){
+  const die = state.rng.die(20);
+  const mod = attr(u, attrName) + getMods(state, u).save;
+  const total = die + mod;
+  const ok = total >= dc;
+  L(state, 'save', `  ${u.name} ${attrName} save: d20(${die})${fmtMod(mod)}=${total} vs DC ${dc} — ${ok ? 'SAVE' : 'FAIL'}${label ? ' (' + label + ')' : ''}`);
+  return ok;
+}
+
+/* one attack roll vs DEF; returns {hit, crit} */
+function attackRoll(state, atkU, tgt, mod, opts = {}){
+  let adv = 0;
+  if (opts.adv) adv++;
+  if (getStatus(atkU, 'advNext')){ adv++; dropStatus(atkU, 'advNext'); }
+  if (hasStatus(atkU, 'offeringAdv')) adv++;
+  if (hasStatus(atkU, 'hidden')) adv++;
+  if (hasStatus(tgt, 'prone') && dist(atkU, tgt) === 0) adv++;
+  if (hasStatus(tgt, 'asleep')) adv++;
+  let dis = 0;
+  if (opts.dis) dis++;
+  const am = getMods(state, atkU);
+  if (am.disAtk) dis++;
+  if (getStatus(atkU, 'dazed')){ dis++; dropStatus(atkU, 'dazed'); }
+  if (hasStatus(atkU, 'prone')) dis++;
+  if (hasStatus(tgt, 'covered')) dis++;
+  if (hasStatus(tgt, 'hidden')) dis++;
+  if (hasStatus(atkU, 'hidden')) dropStatus(atkU, 'hidden');   // attacking breaks camouflage
+
+  const net = Math.sign(adv) - Math.sign(dis);
+  let die, rollTxt;
+  if (net !== 0){
+    const d1 = state.rng.die(20), d2 = state.rng.die(20);
+    die = net > 0 ? Math.max(d1, d2) : Math.min(d1, d2);
+    rollTxt = `d20(${d1},${d2}${net > 0 ? ' adv' : ' dis'}→${die})`;
+  } else {
+    die = state.rng.die(20);
+    rollTxt = `d20(${die})`;
+  }
+  const atkMod = mod + am.atk;
+  const def = effDef(state, tgt, { ignoresCover: opts.ignoresCover });
+  const total = die + atkMod;
+  const crit = die === 20;
+  const fumble = die === 1;
+  const hit = !fumble && (crit || total >= def);
+  const verb = opts.verb || 'attacks';
+  let line = `${atkU.name} ${verb} ${tgt.name}: ${rollTxt}${fmtMod(atkMod)}=${total} vs DEF ${def} — ` +
+    (crit ? 'CRITICAL HIT!' : hit ? 'HIT' : fumble ? 'NATURAL 1. Miss.' : 'MISS');
+  L(state, hit ? 'info' : 'miss', line);
+  if (!hit && state.rng.random() < 0.12) L(state, 'dim', '  ' + state.rng.pick(QUIPS_MISS));
+  return { hit, crit };
+}
+
+/* ---------- damage / healing / death ---------- */
+function dealDamage(state, src, tgt, amount, type, opts = {}){
+  if (tgt.dead) return 0;
+  if (hasStatus(tgt, 'removed') || hasStatus(tgt, 'polymorphed')){
+    L(state, 'dim', `  ${tgt.name} cannot be affected.`); return 0;
+  }
+  let amt = amount;
+  // Ranger's Mark: the marker's damage is doubled
+  const mk = getStatus(tgt, 'marked');
+  if (mk && src && mk.src === src.uid){ amt *= 2; L(state, 'dmg', `  Ranger's Mark: damage doubled to ${amt}!`); }
+  // Crimson Pact: half the damage allies take redirects to the pact target
+  const pact = state.effects.find(e => e.id === 'crimsonPact' && e.protects === tgt.side && e.target !== tgt.uid);
+  if (pact){
+    const half = Math.floor(amt / 2);
+    const pt = unitByUid(state, pact.target);
+    amt -= half;
+    if (pt && !pt.dead && half > 0){
+      L(state, 'dmg', `  Crimson Pact drinks ${half} of it and feeds it to ${pt.name}.`);
+      applyRawDamage(state, src, pt, half, type);
+    }
+  }
+  // Absorb reaction (physical damage)
+  if (opts.phys && tgt.char && tryReaction(state, 'physDamage', { defender: tgt, amount: amt })) return 0;
+  if (hasStatus(tgt, 'shieldWall')){ amt = Math.floor(amt / 2); L(state, 'react', `  Shield Wall halves it to ${amt}.`); }
+  return applyRawDamage(state, src, tgt, amt, type, opts);
+}
+function applyRawDamage(state, src, tgt, amt, type, opts = {}){
+  const fs = state.effects.find(e => e.id === 'finalStand' && e.protects === tgt.side);
+  if (fs) amt = Math.floor(amt / 2);
+  if (hasStatus(tgt, 'asleep')){ dropStatus(tgt, 'asleep'); L(state, 'info', `  ${tgt.name} jolts awake!`); }
+  let dealt = amt;
+  if (tgt.tempHp > 0){
+    const ab = Math.min(tgt.tempHp, amt);
+    tgt.tempHp -= ab; amt -= ab;
+    if (ab > 0) L(state, 'dmg', `  ${ab} soaked by temporary HP.`);
+  }
+  const wasDowned = tgt.downed;
+  tgt.hp -= amt;
+  if (src) src.dmg += dealt;
+  L(state, 'dmg', `  ${tgt.name} takes ${dealt} ${type || 'damage'}${dealt !== amt ? '' : ''} (${Math.max(tgt.hp,0)}/${tgt.maxHp} HP).`);
+  if (fs && tgt.hp <= 0 && !tgt.isSummon){
+    tgt.hp = 1;
+    L(state, 'react', `  Final Stand holds ${tgt.name} at 1 HP!`);
+    return dealt;
+  }
+  if (tgt.hp <= -tgt.maxHp){
+    tgt.dead = true; tgt.downed = false;
+    if (src) src.kills++;
+    L(state, 'death', `  ${tgt.name} is DESTROYED OUTRIGHT. (${tgt.hp} vs -${tgt.maxHp})`);
+  } else if (tgt.hp <= 0 && !tgt.downed){
+    tgt.hp = 0;
+    if (tgt.isSummon){ tgt.dead = true; L(state, 'summon', `  ${tgt.name} comes apart and vanishes.`); }
+    else { tgt.downed = true; if (src) src.kills++; L(state, 'death', `  ${tgt.name} goes DOWN! (prone, dying)`); }
+  } else if (wasDowned && amt > 0){
+    tgt.deathF++;
+    L(state, 'death', `  ${tgt.name} (downed) suffers — death save failure ${tgt.deathF}/3.`);
+    if (tgt.deathF >= 3){ tgt.dead = true; tgt.downed = false; L(state, 'death', `  ${tgt.name} is gone.`); }
+  }
+  return dealt;
+}
+function healUnit(state, src, tgt, amt, opts = {}){
+  if (tgt.dead) return;
+  if (tgt.downed && !opts.revive){ L(state, 'dim', `  ${tgt.name} is down — this can't reach them.`); return; }
+  if (tgt.downed){
+    tgt.downed = false; tgt.deathF = 0; tgt.deathS = 0;
+    tgt.hp = Math.min(tgt.maxHp, Math.max(1, amt));
+    addStatus(state, tgt, { id:'prone', turns:1 });
+    L(state, 'heal', `  ${tgt.name} is BACK UP at ${tgt.hp} HP (prone).`);
+  } else {
+    const before = tgt.hp;
+    tgt.hp = Math.min(tgt.maxHp, tgt.hp + amt);
+    L(state, 'heal', `  ${tgt.name} heals ${tgt.hp - before} (${tgt.hp}/${tgt.maxHp} HP).`);
+  }
+  if (src) src.heal += amt;
+}
+
+/* ---------- movement, bands, opportunity attacks ---------- */
+function moveCost(state, u, steps){ return steps * getMods(state, u).moveMult; }
+function basicAttack(state, u, tgt, opts = {}){
+  const ranged = dist(u, tgt) > 0;
+  const mod = ranged ? attr(u, 'COR') : meleeMod(u);
+  const dice = ranged ? '1d4' : '1d6';
+  const res = attackRoll(state, u, tgt, mod, { verb: ranged ? 'shoots at' : 'strikes at', dis: opts.dis });
+  if (res.hit){
+    const extra = weaponExtraDice(u, true);
+    const dmg = rollDamage(state, u, dice, mod + getMods(state, u).dmg, { crit: res.crit, extraDice: extra });
+    L(state, 'dmg', `  ${dmg.detail} → ${dmg.total}`);
+    dealDamage(state, u, tgt, dmg.total, ranged ? 'piercing' : 'bludgeoning', { phys: true });
+  }
+}
+function weaponExtraDice(u, melee){
+  const ex = [];
+  const rf = getStatus(u, 'meleeDmgDice'); if (rf && melee) ex.push({ dice: rf.dice, label:'stone' });
+  const wp = getStatus(u, 'weaponPoison'); if (wp) ex.push({ dice: wp.dice, label:'poison' });
+  const bf = getStatus(u, 'beastForm'); // beast form handled in basic dice elsewhere; extra claws not stacked
+  const os = getStatus(u, 'otherSelf'); if (os) ex.push({ dice:'1d6', label:'other self' });
+  return ex;
+}
+/* move u by `steps` bands toward (dir=+1) or away from (dir=-1) the enemy line */
+function moveBands(state, u, steps, dir, opts = {}){
+  const m = getMods(state, u);
+  if (m.noMove){ L(state, 'dim', `${u.name} strains against ${hasStatus(u,'frozen') ? 'the ice' : 'the snare'} — no movement.`); return false; }
+  const costPer = m.moveMult * (opts.disengage ? 2 : 1);
+  let moved = 0;
+  for (let i = 0; i < steps; i++){
+    if (u.ap < costPer) break;
+    const from = u.pos;
+    const engaged = enemiesOf(state, u).filter(e => dist(e, u) === 0);
+    const to = Math.max(0, Math.min(8, from + dir * fwd(u)));
+    if (to === from) break;
+    u.ap -= costPer;
+    u.pos = to;
+    moved++;
+    const leaving = engaged.filter(e => dist(e, u) > 0);
+    if (leaving.length && !opts.disengage){
+      for (const e of leaving) opportunityAttack(state, e, u);
+      if (u.dead || u.downed) return true;
+    }
+    fireMoveReactions(state, u);
+    if (u.dead || u.downed) return true;
+  }
+  if (moved > 0){
+    const near = enemiesOf(state, u).sort((a, b) => dist(a, u) - dist(b, u))[0];
+    L(state, 'ap', `${u.name} ${opts.disengage ? 'disengages and ' : ''}moves ${moved} band${moved > 1 ? 's' : ''} (${moved * costPer} AP)` +
+      (near ? ` — now ${BAND_NAMES(dist(near, u))} of ${near.name}.` : '.'));
+  }
+  return moved > 0;
+}
+function opportunityAttack(state, e, mover){
+  // default rule: 1 banked AP for a basic melee attack; uses the round's reaction
+  if (e.isSummon || e.dead || e.downed || cantAct(e) || e.reactionUsed || e.bank < 1) return;
+  e.bank -= 1; e.reactionUsed = true;
+  if (e.bank < 0) violate(state, 'OA paid without banked AP');
+  L(state, 'react', `⚡ Opportunity attack! ${e.name} lashes out as ${mover.name} retreats (1 banked AP).`);
+  basicAttack(state, e, mover, { dis: hasStatus(mover, 'smokeDodge') });
+}
+function fireMoveReactions(state, mover){
+  // RNW Reflexive Shot (reaction) + HNT zone watcher
+  tryReaction(state, 'enemyMoved', { mover });
+  for (const e of state.effects){
+    if (e.id === 'huntZone' && e.charges > 0){
+      const owner = unitByUid(state, e.owner);
+      if (owner && isActive(owner) && !cantAct(owner) && owner.side !== mover.side){
+        e.charges--;
+        L(state, 'react', `⚡ ${owner.name}'s marked zone snaps: reflexive shot at ${mover.name}!`);
+        const mod = treeMod(owner, 'HNT');
+        const res = attackRoll(state, owner, mover, mod, { verb:'snap-shoots' });
+        if (res.hit){
+          const dmg = rollDamage(state, owner, e.dice, mod, { crit: res.crit });
+          L(state, 'dmg', `  ${dmg.detail} → ${dmg.total}`);
+          dealDamage(state, owner, mover, dmg.total, 'piercing', { phys: true });
+        }
+      }
+    }
+  }
+}
+
+/* ---------- reactions (banked AP only, one per round, cost cap 2) ---------- */
+function reactionCost(ab){ return Math.min(ab.ap, 2); }
+function canReact(state, u, ab){
+  return !u.dead && !u.downed && !u.stable && !cantAct(u) && !u.reactionUsed &&
+    u.bank >= reactionCost(ab);
+}
+/* returns true if the triggering event is negated */
+function tryReaction(state, trigger, ctx){
+  for (const u of state.units){
+    if (!u.char) continue;
+    for (const k of u.char.memorized){
+      const ab = k.ab;
+      if (ab.kind !== 'reaction' || ab.trigger !== trigger) continue;
+      if (!canReact(state, u, ab)) continue;
+      // trigger-specific eligibility
+      if (trigger === 'incomingMelee' || trigger === 'incomingPhysical' || trigger === 'incomingAttack'){
+        if (u !== ctx.defender) continue;
+      }
+      if (trigger === 'meleeMissedYou' && u !== ctx.defender) continue;
+      if (trigger === 'physDamage' && u !== ctx.defender) continue;
+      if (trigger === 'allyBelowHalf'){
+        if (u.side !== ctx.ally.side || u === ctx.ally) continue;
+      }
+      if (trigger === 'enemyMoved'){
+        if (u.side === ctx.mover.side || !isActive(u)) continue;
+      }
+      if (trigger === 'enemyAbility'){
+        if (u.side === ctx.caster.side) continue;
+      }
+      if (trigger === 'adjEnemyAttacksOther'){
+        if (u.side === ctx.attacker.side || dist(u, ctx.attacker) !== 0 || ctx.target === u) continue;
+      }
+      const cost = reactionCost(ab);
+      u.bank -= cost; u.reactionUsed = true;
+      if (u.bank < 0) violate(state, 'reaction paid beyond banked AP');
+      L(state, 'react', `⚡ REACTION: ${u.name} uses ${ab.name} (${cost} banked AP).`);
+      if (resolveReaction(state, u, k, ctx)) return true;
+    }
+  }
+  return false;
+}
+function resolveReaction(state, u, k, ctx){
+  const ab = k.ab, mod = treeMod(u, k.tree);
+  switch (ab.effect){
+    case 'negate': {
+      L(state, 'react', `  The ${ctx.attackName || 'attack'} is turned aside.`);
+      if (ab.retort && ctx.attacker && !ctx.attacker.dead){
+        const r = state.rng.rollStr(ab.retort);
+        L(state, 'dmg', `  ${ctx.attacker.name} is scorched: ${fmtDice(r.dice)} → ${r.total} fire`);
+        dealDamage(state, u, ctx.attacker, r.total, 'fire');
+      }
+      return true;
+    }
+    case 'counter': {
+      const tgt = ctx.attacker || ctx.mover;
+      if (!tgt || tgt.dead) return false;
+      const res = attackRoll(state, u, tgt, mod, { verb:'counters' });
+      if (res.hit){
+        const dmg = rollDamage(state, u, ab.dice, mod, { crit: res.crit });
+        L(state, 'dmg', `  ${dmg.detail} → ${dmg.total}`);
+        dealDamage(state, u, tgt, dmg.total, 'piercing', { phys: true });
+        if (ab.riderSave && !tgt.dead && !savingThrow(state, tgt, ab.riderSave.attr, SAVE_DC, STATUS_LABEL[ab.riderSave.status.id])){
+          addStatus(state, tgt, ab.riderSave.status, u);
+          L(state, 'save', `  ${tgt.name} is ${STATUS_LABEL[ab.riderSave.status.id]}!`);
+        }
+      }
+      return false;
+    }
+    case 'shift': {
+      u.pos = Math.max(0, Math.min(8, u.pos - fwd(u)));
+      L(state, 'react', `  ${u.name} folds through shadow — one band away, free.`);
+      return false;
+    }
+    case 'redirect': {
+      const others = state.units.filter(x => isActive(x) && x !== u && x !== ctx.attacker && dist(x, u) === 0);
+      if (!others.length){ L(state, 'dim', '  ...but no one else is close enough. The blow lands.'); return false; }
+      const nt = others.sort((a, b) => (a.side === ctx.attacker.side ? -1 : 1))[0];
+      L(state, 'react', `  The blow is deflected into ${nt.name}!`);
+      ctx.redirectTo = nt;
+      return true;   // original attack vs u is negated; caller re-resolves vs redirectTo
+    }
+    case 'heal': {
+      const r = state.rng.rollStr(ab.dice);
+      const amt = r.total + mod;
+      L(state, 'heal', `  Replenish: ${fmtDice(r.dice)}${fmtMod(mod)} → ${amt}`);
+      healUnit(state, u, ctx.ally, amt);
+      return false;
+    }
+    case 'absorb': {
+      const die = state.rng.die(20);
+      const tot = die + attr(u, 'WIT');
+      const ok = tot >= ab.dc;
+      L(state, 'save', `  Absorb — WIT check d20(${die})${fmtMod(attr(u,'WIT'))}=${tot} vs DC ${ab.dc}: ${ok ? 'ABSORBED' : 'failed'}`);
+      if (ok){
+        healUnit(state, u, u, ctx.amount);
+        L(state, 'heal', `  The blow becomes ${ctx.amount} healing instead.`);
+        return true;
+      }
+      return false;
+    }
+    case 'counterspell': {
+      const dc = 10 + ctx.ab.ap;
+      const die = state.rng.die(20);
+      const tot = die + attr(u, 'INT');
+      const ok = tot >= dc;
+      L(state, 'save', `  Counterspell — INT check d20(${die})${fmtMod(attr(u,'INT'))}=${tot} vs DC ${dc}: ${ok ? 'COUNTERED' : 'fizzles'}`);
+      return ok;
+    }
+  }
+  return false;
+}
+
+/* ---------- targeting helpers ---------- */
+function charmBlocked(u, tgt){
+  const ch = getStatus(u, 'charmed');
+  return !!(ch && ch.src === tgt.uid);
+}
+function lowestHpEnemy(state, u){ return enemiesOf(state, u).filter(t => !charmBlocked(u, t)).sort((a, b) => a.hp - b.hp)[0]; }
+function biggestThreat(state, u){ return enemiesOf(state, u).filter(t => !charmBlocked(u, t)).sort((a, b) => b.dmg - a.dmg || b.hp - a.hp)[0]; }
+function woundedAlly(state, u){
+  return [u, ...alliesOf(state, u)].filter(a => !a.isSummon && a.hp < a.maxHp)
+    .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+}
+function downedAlly(state, u){
+  return state.units.find(a => a.side === u.side && a.downed && !a.dead && !a.stable);
+}
+function groupTargets(state, u, who, primary){
+  switch (who){
+    case 'enemy': return primary ? [primary] : [lowestHpEnemy(state, u)].filter(Boolean);
+    case 'meleeEnemies': return enemiesOf(state, u).filter(e => dist(e, u) === 0);
+    case 'meleeNearEnemies': return enemiesOf(state, u).filter(e => dist(e, u) <= 1);
+    case 'allEnemies': return enemiesOf(state, u);
+    case 'others': return state.units.filter(x => isActive(x) && x !== u);
+    case 'upTo2Enemies': case 'upTo2Line':
+      return enemiesOf(state, u).sort((a, b) => b.dmg - a.dmg).slice(0, 2);
+    case 'upTo2MeleeNear':
+      return enemiesOf(state, u).filter(e => dist(e, u) <= 1).slice(0, 2);
+  }
+  return [];
+}
+
+/* ---------- sneak attack (SLY tree feature, free) ---------- */
+function sneakDice(state, u, tgt){
+  if (!u.char || !u.char.sneakFeature || u.sneakUsed) return null;
+  const engaged = alliesOf(state, u).some(a => dist(a, tgt) === 0);
+  if (engaged || !tgt.acted){
+    u.sneakUsed = true;
+    return { dice:'1d6', label:'sneak' };
+  }
+  return null;
+}
+
+/* ---------- ability casting ---------- */
+function abilityReady(state, u, k){
+  const cdKey = k.tree + ':' + k.ab.key;
+  return !(u.cds[cdKey] && u.turnCount < u.cds[cdKey]);
+}
+function castAbility(state, u, k, target){
+  const ab = k.ab, mod = ab.modAttr ? attr(u, ab.modAttr) : treeMod(u, k.tree);
+  if (!u.char.memorized.includes(k)){ violate(state, `${u.name} used unmemorized ${ab.name}`); return false; }
+  if (!abilityReady(state, u, k)) return false;
+  if (u.ap < ab.ap) return false;
+  if (ab.spike && state.round === 1) violate(state, `${u.name} used spike on round 1`);
+  u.ap -= ab.ap;
+  if (ab.cd) u.cds[k.tree + ':' + ab.key] = u.turnCount + ab.cd;
+  if (ab.spike){
+    L(state, 'spike', `★ ${u.name.toUpperCase()} UNLEASHES ${ab.name.toUpperCase()} ★ (${ab.ap} AP)`, true);
+  } else {
+    L(state, 'ap', `${u.name} uses ${ab.name} (${ab.ap} AP).`);
+  }
+  // Counterspell window
+  if (tryReaction(state, 'enemyAbility', { caster: u, ab })){
+    L(state, 'miss', `  ${ab.name} is countered. The essence disperses.`);
+    return true;
+  }
+  resolveAbility(state, u, k, target, mod);
+  return true;
+}
+
+function meleeAttackSequence(state, u, tgt, ab, mod, opts = {}){
+  // one attack roll incl. pre-hit reactions (parry/deflect), returns dealt
+  if (charmBlocked(u, tgt)){
+    L(state, 'dim', `  ${u.name} can't bring themselves to strike ${tgt.name} (Charmed).`);
+    return 0;
+  }
+  const melee = dist(u, tgt) === 0;
+  const ctx = { defender: tgt, attacker: u, attackName: ab.name };
+  if (melee && tryReaction(state, 'incomingMelee', ctx)){
+    if (ctx.redirectTo) tgt = ctx.redirectTo; else return 0;
+  } else if (tryReaction(state, 'incomingPhysical', ctx) || tryReaction(state, 'incomingAttack', ctx)){
+    return 0;
+  }
+  // Sucker Punch watches for adjacent enemies swinging at someone else
+  tryReaction(state, 'adjEnemyAttacksOther', { attacker: u, target: tgt });
+  const res = attackRoll(state, u, tgt, mod, { ignoresCover: ab.ignoresCover, verb: opts.verb });
+  if (!res.hit){
+    if (melee) tryReaction(state, 'meleeMissedYou', { defender: tgt, attacker: u });
+    return 0;
+  }
+  const extra = weaponExtraDice(u, melee);
+  const sd = ab.sneak || melee ? sneakDice(state, u, tgt) : null;
+  if (sd) extra.push(sd);
+  const doubled = ab.doubleBelowHalf && tgt.hp < tgt.maxHp / 2;
+  if (doubled) L(state, 'spike', '  The target is bloodied — every die rolls TWICE.');
+  let dice = ab.dice;
+  const bf = getStatus(u, 'beastForm');
+  if (bf && melee && ab.basicLike) dice = bf.dice;
+  const dmg = rollDamage(state, u, dice, mod + getMods(state, u).dmg + (opts.flatBonus || 0),
+    { crit: res.crit, doubled, extraDice: extra });
+  L(state, 'dmg', `  ${dmg.detail} → ${dmg.total} ${ab.dmgType || ''}`);
+  const dealt = dealDamage(state, u, tgt, dmg.total, ab.dmgType, { phys: !ab.dmgType || ['slashing','piercing','bludgeoning','blunt'].includes(ab.dmgType) });
+  if (!tgt.dead && !tgt.downed){
+    if (ab.onHitSave){
+      const s = ab.onHitSave;
+      if (!savingThrow(state, tgt, s.attr, SAVE_DC)){
+        if (s.push){
+          tgt.pos = Math.max(0, Math.min(8, tgt.pos + s.push * fwd(u)));
+          L(state, 'info', `  ${tgt.name} is knocked back a band!`);
+        }
+        if (s.status){ addStatus(state, tgt, s.status, u); L(state, 'save', `  ${tgt.name} is ${STATUS_LABEL[s.status.id]}!`); }
+      }
+    }
+    if (ab.onHitStatus){ addStatus(state, tgt, ab.onHitStatus, u); L(state, 'save', `  ${tgt.name} is ${STATUS_LABEL[ab.onHitStatus.id]}.`); }
+  }
+  return dealt;
+}
+
+function resolveAbility(state, u, k, target, mod){
+  const ab = k.ab;
+  switch (ab.kind){
+    case 'atk': {
+      const n = ab.n || 1;
+      for (let i = 0; i < n; i++){
+        let tgt = target;
+        if (ab.split || !tgt || tgt.dead || tgt.downed || charmBlocked(u, tgt)) tgt = lowestHpEnemy(state, u);
+        if (!tgt) break;
+        if (ab.melee && dist(u, tgt) > 0) break;
+        meleeAttackSequence(state, u, tgt, ab, mod);
+      }
+      if (ab.selfBuff){ addStatus(state, u, ab.selfBuff, u); L(state, 'info', `  ${u.name} braces (+${ab.selfBuff.amt} DEF until next turn).`); }
+      break;
+    }
+    case 'autoHit': {
+      let pool = enemiesOf(state, u).sort((a, b) => a.hp - b.hp);
+      if (!pool.length) break;
+      let ti = 0;
+      for (let i = 0; i < ab.bolts; i++){
+        while (ti < pool.length - 1 && (pool[ti].dead || pool[ti].downed)) ti++;
+        const tgt = pool[ti];
+        if (!tgt || tgt.dead) break;
+        const r = state.rng.rollStr(ab.dice);
+        const amt = r.total + (ab.flat || 0);
+        L(state, 'dmg', `  bolt ${i + 1} strikes ${tgt.name} unerringly: ${fmtDice(r.dice)}+${ab.flat} → ${amt}`);
+        dealDamage(state, u, tgt, amt, 'force');
+      }
+      break;
+    }
+    case 'saveDmg': {
+      const tgts = groupTargets(state, u, ab.who, target);
+      if (!tgts.length) break;
+      const dmg = rollDamage(state, u, ab.dice, ab.addMod ? mod : 0);
+      L(state, 'dmg', `  ${ab.name} damage roll: ${dmg.detail} → ${dmg.total} ${ab.dmgType || ''}`);
+      for (const t of tgts){
+        if (ab.save && ab.save.half){
+          const ok = savingThrow(state, t, ab.save.attr, SAVE_DC, 'half');
+          dealDamage(state, u, t, ok ? Math.floor(dmg.total / 2) : dmg.total, ab.dmgType);
+        } else {
+          dealDamage(state, u, t, dmg.total, ab.dmgType);
+          if (ab.save && ab.save.status && !t.dead && !t.downed &&
+              !savingThrow(state, t, ab.save.attr, SAVE_DC, STATUS_LABEL[ab.save.status.id])){
+            addStatus(state, t, ab.save.status, u);
+            L(state, 'save', `  ${t.name} is ${STATUS_LABEL[ab.save.status.id]}!`);
+          }
+        }
+      }
+      break;
+    }
+    case 'heal': {
+      const tgt = target || woundedAlly(state, u) || u;
+      const r = state.rng.rollStr(ab.dice);
+      const amt = r.total + (ab.addMod ? mod : (ab.modAttr ? mod : 0));
+      L(state, 'heal', `  ${ab.name}: ${fmtDice(r.dice)}${(ab.addMod || ab.modAttr) ? fmtMod(mod) : ''} → ${amt}`);
+      healUnit(state, u, tgt, amt, { revive: ab.revive });
+      break;
+    }
+    case 'buff': {
+      let tgts;
+      if (ab.target === 'self') tgts = [u];
+      else if (ab.target === 'allies') tgts = [u, ...alliesOf(state, u)].filter(x => !x.isSummon);
+      else tgts = [target || woundedAlly(state, u) || u];
+      for (const t of tgts){
+        if (ab.status){ addStatus(state, t, ab.status, u); L(state, 'info', `  ${t.name} gains ${STATUS_LABEL[ab.status.id] || ab.status.id}${ab.status.turns < 90 ? ` (${ab.status.turns} turns)` : ''}.`); }
+        if (ab.tempHP){ t.tempHp += ab.tempHP; L(state, 'heal', `  ${t.name} gains ${ab.tempHP} temporary HP.`); }
+        if (ab.tempHPDice){
+          const r = state.rng.rollStr(ab.tempHPDice);
+          t.tempHp += r.total;
+          L(state, 'heal', `  ${t.name} gains ${fmtDice(r.dice)} → ${r.total} temporary HP.`);
+        }
+      }
+      break;
+    }
+    case 'debuff': {
+      const tgts = groupTargets(state, u, ab.who, target);
+      for (const t of tgts){
+        if (ab.save && savingThrow(state, t, ab.save, SAVE_DC, STATUS_LABEL[ab.status.id])) continue;
+        addStatus(state, t, { ...ab.status }, u);
+        L(state, 'save', `  ${t.name} is ${STATUS_LABEL[ab.status.id]}${ab.status.turns < 90 ? ` for ${ab.status.turns} turns` : ''}!`);
+      }
+      break;
+    }
+    case 'summon': {
+      const mine = state.units.filter(s => s.isSummon && s.owner === u.uid && !s.dead);
+      if (mine.length >= 2){ L(state, 'dim', '  (summon cap reached — the essence refuses)'); break; }
+      summonUnit(state, u, ab.unit, ab.turns);
+      break;
+    }
+    case 'reaction':
+      break; // reactions never cast actively
+    case 'special':
+      SPECIALS[ab.key](state, u, k, target, mod);
+      break;
+  }
+  u.acted = true;
+}
+
+function summonUnit(state, u, spec, turns){
+  const s = makeSummon(u, spec, turns, state);
+  state.units.push(s);
+  const idx = state.order.indexOf(u);
+  state.order.splice(idx + 1, 0, s);
+  L(state, 'summon', `✦ ${s.name} claws into being! (HP ${s.hp}, DEF ${s.spec.def}, ${turns < 90 ? turns + ' turns' : 'until the end'})`);
+  return s;
+}
+
+/* ---------- bespoke ability handlers ---------- */
+const SPECIALS = {
+  sweeping(state, u, k, target, mod){
+    // hit one melee target; on each hit may pay 1 AP to swing at another
+    let pool = enemiesOf(state, u).filter(e => dist(e, u) === 0);
+    let tgt = target && dist(target, u) === 0 ? target : pool[0];
+    while (tgt){
+      const dealt = meleeAttackSequence(state, u, tgt, { ...k.ab, kind:'atk' }, mod);
+      if (dealt <= 0) break;
+      pool = enemiesOf(state, u).filter(e => dist(e, u) === 0 && e !== tgt);
+      if (!pool.length || u.ap < 1) break;
+      u.ap -= 1;
+      L(state, 'ap', `  ...the swing carries on (+1 AP)!`);
+      tgt = pool[0];
+    }
+  },
+  earthbreaker(state, u, k, target, mod){
+    const tgts = enemiesOf(state, u).filter(e => dist(e, u) <= 1);
+    const dmg = rollDamage(state, u, k.ab.dice, 0);
+    L(state, 'dmg', `  The ground detonates: ${dmg.detail} → ${dmg.total} to everything Melee+Near`);
+    for (const t of tgts) dealDamage(state, u, t, dmg.total, 'bludgeoning');
+    state.effects.push({ id:'earthGround', owner: u.uid, victims: 1 - u.side, turns: 2 });
+    L(state, 'info', '  Broken ground: enemy band movement costs 2 AP for 2 turns.');
+  },
+  whirlwind(state, u, k, target, mod){
+    let pool = enemiesOf(state, u).filter(e => dist(e, u) === 0);
+    if (!pool.length){ L(state, 'dim', '  ...but nothing stands in the steel circle.'); return; }
+    for (let i = 0; i < k.ab.hits; i++){
+      pool = enemiesOf(state, u).filter(e => dist(e, u) === 0);
+      if (!pool.length) break;
+      const tgt = pool[i % pool.length];
+      meleeAttackSequence(state, u, tgt, { ...k.ab, kind:'atk' }, mod);
+    }
+  },
+  twincast(state, u, k, target, mod){
+    L(state, 'spike', '  Two spells fold into one breath:');
+    const opts = u.char.memorized.filter(m => !m.ab.spike && m.ab.kind !== 'reaction' &&
+      m.ab.ap <= 3 && abilityReady(state, u, m) && isDamageAbility(m.ab));
+    const all = opts.length ? opts : u.char.memorized.filter(m => !m.ab.spike && m.ab.kind !== 'reaction' && m.ab.ap <= 3 && abilityReady(state, u, m));
+    for (let i = 0; i < 2 && all.length; i++){
+      const pick = all[i % all.length];
+      const savedAp = u.ap;
+      u.ap += pick.ab.ap;            // free cast
+      L(state, 'ap', `  (echo-cast: ${pick.ab.name}, 0 AP)`);
+      resolveAbility(state, u, pick, lowestHpEnemy(state, u), pick.ab.modAttr ? attr(u, pick.ab.modAttr) : treeMod(u, pick.tree));
+      u.ap = savedAp;
+      if (pick.ab.cd) u.cds[pick.tree + ':' + pick.ab.key] = u.turnCount + pick.ab.cd;
+    }
+  },
+  smokeyEscape(state, u, k, target, mod){
+    addStatus(state, u, { id:'smokeDodge', turns:1 }, u);
+    const saved = u.ap; u.ap += 1;     // the retreat is included in the ability cost
+    moveBands(state, u, 1, -1);
+    u.ap = saved;
+    L(state, 'info', '  A curtain of smoke — opportunity attacks against them at disadvantage.');
+  },
+  pyre(state, u, k, target, mod){
+    const tgts = enemiesOf(state, u);
+    const dmg = rollDamage(state, u, k.ab.dice, 0);
+    L(state, 'dmg', `  A pillar of remembering fire: ${dmg.detail} → ${dmg.total}`);
+    for (const t of tgts){
+      const ok = savingThrow(state, t, 'COR', SAVE_DC, 'half');
+      dealDamage(state, u, t, ok ? Math.floor(dmg.total / 2) : dmg.total, 'fire');
+    }
+    state.effects.push({ id:'burningGround', owner: u.uid, victims: 1 - u.side, turns: 3, dice:'1d6', srcUid: u.uid });
+    L(state, 'info', '  The ground itself keeps burning (1d6/turn, 3 turns).');
+  },
+  tidewall(state, u, k, target, mod){
+    const tgts = enemiesOf(state, u);
+    const dmg = rollDamage(state, u, k.ab.dice, mod);
+    L(state, 'dmg', `  A wall of grey water: ${dmg.detail} → ${dmg.total}`);
+    for (const t of tgts){
+      dealDamage(state, u, t, dmg.total, 'cold');
+      if (t.dead || t.downed) continue;
+      while (dist(u, t) < 2 && t.pos > 0 && t.pos < 8) t.pos += fwd(t) * -1;
+      addStatus(state, t, { id:'slowed', turns:2 }, u);
+    }
+    L(state, 'info', '  All enemies are washed to Far and slowed for 2 turns.');
+  },
+  tempest(state, u, k, target, mod){
+    const tgts = enemiesOf(state, u);
+    const d1 = rollDamage(state, u, '5d8', 0), d2 = rollDamage(state, u, '2d8', 0);
+    L(state, 'dmg', `  The sky renders judgment: ${d1.detail} lightning + ${d2.detail} thunder → ${d1.total + d2.total}`);
+    for (const t of tgts){
+      const ok = savingThrow(state, t, 'FRT', SAVE_DC, 'half');
+      const tot = d1.total + d2.total;
+      dealDamage(state, u, t, ok ? Math.floor(tot / 2) : tot, 'lightning');
+    }
+  },
+  contDrift(state, u, k, target, mod){
+    const tgts = enemiesOf(state, u);
+    const dmg = rollDamage(state, u, k.ab.dice, 0);
+    L(state, 'dmg', `  The map is redrawn: ${dmg.detail} → ${dmg.total} to all enemies`);
+    for (const t of tgts){
+      dealDamage(state, u, t, dmg.total, 'bludgeoning');
+      if (t.dead || t.downed) continue;
+      if (!savingThrow(state, t, 'COR', SAVE_DC, 'prone+slow')){
+        addStatus(state, t, { id:'prone' }, u);
+        addStatus(state, t, { id:'slowed', turns:2 }, u);
+        L(state, 'save', `  ${t.name} is thrown prone and slowed!`);
+      }
+    }
+    for (const a of [u, ...alliesOf(state, u)]){
+      addStatus(state, a, { id:'defUp', turns:3, amt:2 }, u);
+    }
+    L(state, 'info', '  New ridgelines give all allies +2 DEF cover (3 turns).');
+  },
+  dawn(state, u, k, target, mod){
+    for (const a of [u, ...alliesOf(state, u)].filter(x => !x.isSummon)){
+      addStatus(state, a, { id:'apBoost', turns:1 }, u);
+    }
+    L(state, 'heal', '  Dawn breaks early: all allies gain +2 AP on their next turn.');
+  },
+  dawnsong(state, u, k, target, mod){
+    const r = state.rng.rollStr(k.ab.dice);
+    const amt = r.total + mod;
+    L(state, 'heal', `  The first song ever sung: ${fmtDice(r.dice)}${fmtMod(mod)} → heal ${amt}`);
+    for (const a of state.units.filter(x => x.side === u.side && !x.dead && !x.stable && !x.isSummon)){
+      if (a.downed) healUnit(state, u, a, Math.floor(amt / 2), { revive: true });
+      else healUnit(state, u, a, amt);
+      const before = a.statuses.length;
+      a.statuses = a.statuses.filter(s => ['defUp','atkUp','dmgUp','advNext','offeringAdv','meleeDmgDice','weaponPoison','phantomBlade','beastForm','otherSelf','embiggened','raging','shieldWall','hidden','apBoost'].includes(s.id));
+      if (a.statuses.length < before) L(state, 'heal', `  ${a.name} is cleansed of all afflictions.`);
+    }
+  },
+  longNight(state, u, k, target, mod){
+    state.effects.push({ id:'longNight', owner: u.uid, victims: 1 - u.side, turns: 3, srcUid: u.uid });
+    L(state, 'info', '  Darkness falls for 3 turns: enemies attack at disadvantage and take 2d6 dark at the start of their turns. Allies see perfectly.');
+  },
+  offering(state, u, k, target, mod){
+    const r = state.rng.roll(1, 4);
+    L(state, 'dmg', `  ${u.name} opens a vein: ${fmtDice(r.dice)} → ${r.total} self-damage`);
+    applyRawDamage(state, null, u, r.total, 'blood');
+    if (!u.downed && !u.dead){
+      addStatus(state, u, { id:'offeringAdv', turns:3 }, u);
+      L(state, 'info', '  The blood answers: advantage on attacks for 3 turns.');
+    }
+  },
+  lifeTransfer(state, u, k, target, mod){
+    const r = state.rng.rollStr(k.ab.dice);
+    const allies = [u, ...alliesOf(state, u)].filter(x => !x.isSummon);
+    const from = allies.slice().sort((a, b) => b.hp / b.maxHp - a.hp / a.maxHp)[0];
+    const to = allies.slice().sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+    if (from === to) { L(state, 'dim', '  ...but everyone is equally fine. Awkward.'); return; }
+    const amt = Math.min(r.total, from.hp - 1);
+    L(state, 'heal', `  Life Transfer: ${fmtDice(r.dice)} → ${amt} HP flows from ${from.name} to ${to.name}`);
+    from.hp -= amt;
+    healUnit(state, u, to, amt);
+  },
+  siphon(state, u, k, target, mod){
+    const tgts = enemiesOf(state, u).filter(e => dist(e, u) <= 1);
+    if (!tgts.length){ L(state, 'dim', '  ...no blood in reach.'); return; }
+    let totalDealt = 0;
+    const dmg = rollDamage(state, u, k.ab.dice, 0);
+    L(state, 'dmg', `  Siphon: ${dmg.detail} → ${dmg.total} dark to all Melee/Near enemies`);
+    for (const t of tgts){
+      const ok = savingThrow(state, t, 'FRT', SAVE_DC, 'half');
+      totalDealt += dealDamage(state, u, t, ok ? Math.floor(dmg.total / 2) : dmg.total, 'dark');
+    }
+    const back = Math.floor(totalDealt / 2);
+    if (back > 0) healUnit(state, u, u, back);
+  },
+  crimsonPact(state, u, k, target, mod){
+    const tgt = biggestThreat(state, u);
+    if (!tgt) return;
+    const dmg = rollDamage(state, u, k.ab.dice, 0);
+    L(state, 'dmg', `  The pact is signed in ${tgt.name}'s name: ${dmg.detail} → ${dmg.total}`);
+    dealDamage(state, u, tgt, dmg.total, 'blood');
+    state.effects.push({ id:'crimsonPact', owner: u.uid, protects: u.side, target: tgt.uid, turns: 3 });
+    L(state, 'info', `  For 3 turns, half of all damage ${u.side === 0 ? 'the party' : 'the enemy'} takes is redirected to ${tgt.name}.`);
+  },
+  morphMissiles(state, u, k, target, mod){
+    const TYPES = ['fire', 'cold', 'acid', 'lightning'];
+    const tr = state.rng.die(4);
+    const type = TYPES[tr - 1];
+    L(state, 'info', `  Morph table d4(${tr}) → ${type}!`);
+    const tgt = target || lowestHpEnemy(state, u);
+    if (!tgt) return;
+    meleeAttackSequence(state, u, tgt, { ...k.ab, kind:'atk', dmgType:type }, mod);
+  },
+  otherSelf(state, u, k, target, mod){
+    const r = state.rng.rollStr(k.ab.dice);
+    L(state, 'heal', `  Something else looks out through their eyes. Heals ${fmtDice(r.dice)} → ${r.total}.`);
+    healUnit(state, u, u, r.total);
+    dropStatus(u, 'prone'); dropStatus(u, 'slowed'); dropStatus(u, 'crippled');
+    addStatus(state, u, { id:'otherSelf', turns:4 }, u);
+    L(state, 'info', '  Adaptive form, 4 turns: +2 DEF, +1d6 on all damage, immune to prone and slow.');
+  },
+  falconDive(state, u, k, target, mod){
+    const tgt = target || biggestThreat(state, u);
+    if (!tgt) return;
+    u.pos = tgt.pos;
+    L(state, 'ap', `  ${u.name} leaps the whole field and lands on ${tgt.name}'s band!`);
+    const tgts = enemiesOf(state, u).filter(e => dist(e, u) === 0);
+    const dmg = rollDamage(state, u, k.ab.dice, mod);
+    L(state, 'dmg', `  Impact: ${dmg.detail} → ${dmg.total}`);
+    for (const t of tgts){
+      const ok = savingThrow(state, t, 'COR', SAVE_DC, 'half');
+      dealDamage(state, u, t, ok ? Math.floor(dmg.total / 2) : dmg.total, 'bludgeoning');
+    }
+  },
+  thousandHands(state, u, k, target, mod){
+    let streak = 0;
+    for (let i = 0; i < k.ab.hits; i++){
+      const pool = enemiesOf(state, u).filter(e => dist(e, u) === 0);
+      if (!pool.length) break;
+      const tgt = pool.sort((a, b) => a.hp - b.hp)[0];
+      const dealt = meleeAttackSequence(state, u, tgt, { ...k.ab, kind:'atk' }, mod, { flatBonus: streak });
+      if (dealt > 0){ streak++; if (streak > 1) L(state, 'dmg', `  ...hands blur (+${streak - 1} next hit).`); }
+      else streak = 0;
+    }
+  },
+  adrenaline(state, u, k, target, mod){
+    u.ap = Math.min(AP_MAX, u.ap + 2);
+    addStatus(state, u, { id:'apDebt', turns:1 }, u);
+    L(state, 'ap', `  Adrenaline floods in: +2 AP now (${u.ap} AP), the bill (−2) comes next turn.`);
+  },
+  theTrick(state, u, k, target, mod){
+    const tgt = target || lowestHpEnemy(state, u);
+    if (!tgt) return;
+    L(state, 'spike', '  You were watching the left hand.');
+    u.sneakUsed = false; // The Trick auto-applies Sneak Attack
+    const extra = [{ dice:'1d6', label:'sneak' }];
+    u.sneakUsed = true;
+    const res = attackRoll(state, u, tgt, mod, { verb:'reveals the trick to' });
+    if (res.hit){
+      const dmg = rollDamage(state, u, k.ab.dice, mod, { crit: res.crit, extraDice: extra });
+      L(state, 'dmg', `  ${dmg.detail} → ${dmg.total}`);
+      dealDamage(state, u, tgt, dmg.total, 'piercing', { phys: true });
+      if (!tgt.dead && !tgt.downed && !savingThrow(state, tgt, 'FRT', SAVE_DC, 'crippled+dazed')){
+        addStatus(state, tgt, { id:'crippled', turns:2 }, u);
+        addStatus(state, tgt, { id:'dazed', turns:9 }, u);
+        L(state, 'save', `  ${tgt.name} is Crippled and Dazed!`);
+      }
+    }
+    addStatus(state, u, { id:'hidden', turns:9 }, u);
+    L(state, 'info', `  ...and ${u.name} is simply not there anymore.`);
+  },
+  huntZone(state, u, k, target, mod){
+    state.effects.push({ id:'huntZone', owner: u.uid, charges: 2, turns: 3, dice: k.ab.dice });
+    L(state, 'info', `  ${u.name} marks the killing ground — the next two enemies to change bands get shot.`);
+  },
+  deadlyCut(state, u, k, target, mod){
+    const valid = enemiesOf(state, u).filter(t =>
+      hasStatus(t, 'dazed') || hasStatus(t, 'distracted') ||
+      alliesOf(state, u).filter(a => dist(a, t) === 0).length >= 1 && dist(u, t) === 0);
+    const tgt = valid.sort((a, b) => a.hp - b.hp)[0];
+    if (!tgt){ L(state, 'dim', '  ...no opening presents itself.'); return; }
+    const bonus = mod + attr(u, 'STR');
+    const res = attackRoll(state, u, tgt, mod, { verb:'finds the seam in' });
+    if (res.hit){
+      const dmg = rollDamage(state, u, k.ab.dice, bonus + getMods(state, u).dmg, { crit: res.crit });
+      L(state, 'dmg', `  ${dmg.detail} → ${dmg.total}`);
+      dealDamage(state, u, tgt, dmg.total, 'slashing', { phys: true });
+      if (!tgt.dead && !tgt.downed){
+        addStatus(state, tgt, { id:'crippled', turns:3 }, u);
+        L(state, 'save', `  ${tgt.name} is Crippled for 3 turns.`);
+      }
+    }
+  },
+  packMaster(state, u, k, target, mod){
+    L(state, 'summon', '  A whistle only the dead dogs hear.');
+    for (let i = 0; i < 2; i++){
+      const mine = state.units.filter(s => s.isSummon && s.owner === u.uid && !s.dead);
+      if (mine.length >= 2) break;
+      summonUnit(state, u, { name:'Spectral Hound', hp:6, def:12, atkDice:'1d6', atkBonus:2, rider:{ save:'COR', status:{ id:'prone' } } }, 4);
+    }
+  },
+  wildAnswer(state, u, k, target, mod){
+    const tgts = enemiesOf(state, u);
+    const dmg = rollDamage(state, u, k.ab.dice, 0);
+    L(state, 'dmg', `  The wild answers: ${dmg.detail} → ${dmg.total} to all enemies`);
+    for (const t of tgts){
+      dealDamage(state, u, t, dmg.total, 'primal');
+      if (!t.dead && !t.downed && !savingThrow(state, t, 'WIT', SAVE_DC, 'frightened')){
+        addStatus(state, t, { id:'frightened', turns:2 }, u);
+        L(state, 'save', `  ${t.name} is Frightened!`);
+      }
+    }
+    const mine = state.units.filter(s => s.isSummon && s.owner === u.uid && !s.dead);
+    if (mine.length < 2) summonUnit(state, u, { name:'Beast', hp:8, def:12, atkDice:'1d6', atkBonus:2 }, 4);
+  },
+  cleave(state, u, k, target, mod){
+    const pool = enemiesOf(state, u).filter(e => dist(e, u) === 0).slice(0, 2);
+    if (!pool.length) return;
+    for (const t of pool) meleeAttackSequence(state, u, t, { ...k.ab, kind:'atk' }, mod);
+  },
+  finalStand(state, u, k, target, mod){
+    state.effects.push({ id:'finalStand', owner: u.uid, protects: u.side, turns: 2 });
+    L(state, 'info', '  For 2 turns: all allies take half damage and CANNOT be downed. The line holds.');
+  },
+};
+
+/* ====================== TURNS, AI, BATTLE LOOP ======================= */
+
+function deathSaveTurn(state, u){
+  const die = state.rng.die(20);
+  const ok = die >= 10;
+  if (ok){
+    u.deathS++;
+    L(state, 'death', `${u.name} (downed) death save: d20(${die}) — success ${u.deathS}/3.`);
+    if (u.deathS >= 3){ u.stable = true; u.downed = false; L(state, 'death', `${u.name} stabilizes — out of the fight, but alive.`); }
+  } else {
+    u.deathF++;
+    L(state, 'death', `${u.name} (downed) death save: d20(${die}) — FAILURE ${u.deathF}/3.`);
+    if (u.deathF >= 3){ u.dead = true; u.downed = false; L(state, 'death', `${u.name} slips away.`); }
+  }
+}
+
+function startOfTurnDots(state, u){
+  const bl = getStatus(u, 'bleeding');
+  if (bl){
+    const r = state.rng.roll(1, 4);
+    L(state, 'dmg', `${u.name} bleeds: ${fmtDice(r.dice)} → ${r.total}`);
+    applyRawDamage(state, bl.src ? unitByUid(state, bl.src) : null, u, r.total, 'bleed');
+  }
+  for (const e of state.effects){
+    if (e.victims !== u.side || u.dead || u.downed) continue;
+    if (e.id === 'burningGround'){
+      const r = state.rng.roll(1, 6);
+      L(state, 'dmg', `The burning ground gnaws at ${u.name}: ${fmtDice(r.dice)} → ${r.total} fire`);
+      applyRawDamage(state, unitByUid(state, e.srcUid), u, r.total, 'fire');
+    }
+    if (e.id === 'longNight'){
+      const r = state.rng.roll(2, 6);
+      L(state, 'dmg', `The Long Night drinks from ${u.name}: ${fmtDice(r.dice)} → ${r.total} dark`);
+      applyRawDamage(state, unitByUid(state, e.srcUid), u, r.total, 'dark');
+    }
+  }
+}
+
+function tickEndOfTurn(state, u){
+  u.statuses = u.statuses.filter(s => {
+    if (s.turns >= 90) return true;        // until-consumed / battle-length
+    s.turns--;
+    return s.turns > 0;
+  });
+}
+
+function summonTurn(state, u){
+  u.turnsLeft--;
+  if (u.turnsLeft <= 0 && u.spec.name !== 'Dragon Whelp'){
+    u.dead = true;
+    L(state, 'summon', `${u.name} unravels back into essence.`);
+    return;
+  }
+  if (cantAct(u)){ L(state, 'dim', `${u.name} is incapacitated.`); tickEndOfTurn(state, u); return; }
+  if (hasStatus(u, 'prone')){ dropStatus(u, 'prone'); L(state, 'info', `${u.name} rights itself.`); }
+  const tgt = lowestHpEnemy(state, u);
+  if (!tgt){ tickEndOfTurn(state, u); return; }
+  // close in (summons get up to 2 free bands of movement)
+  let steps = 0;
+  while (dist(u, tgt) > 0 && steps < 2 && !getMods(state, u).noMove){
+    u.pos += (tgt.pos > u.pos ? 1 : -1); steps++;
+  }
+  if (steps) L(state, 'ap', `${u.name} skitters ${steps} band${steps > 1 ? 's' : ''} toward ${tgt.name}.`);
+  // breath weapon (Dragon Whelp)
+  const br = u.spec.breath;
+  if (br && !(u.cds.breath && u.turnCount < u.cds.breath)){
+    const tgts = enemiesOf(state, u).filter(e => dist(e, u) <= 1);
+    if (tgts.length){
+      u.cds.breath = u.turnCount + br.cd;
+      const dmg = rollDamage(state, u, br.dice, 0);
+      L(state, 'dmg', `${u.name} BREATHES FIRE: ${dmg.detail} → ${dmg.total} to all in Melee+Near`);
+      for (const t of tgts) dealDamage(state, u, t, dmg.total, 'fire');
+    }
+  }
+  const attacks = u.spec.attacks || 1;
+  for (let i = 0; i < attacks; i++){
+    const t = enemiesOf(state, u).filter(e => dist(e, u) === 0).sort((a, b) => a.hp - b.hp)[0];
+    if (!t) break;
+    const res = attackRoll(state, u, t, u.spec.atkBonus, { verb:'bites at' });
+    if (res.hit){
+      const dmg = rollDamage(state, u, u.spec.atkDice, u.spec.atkBonus, { crit: res.crit });
+      L(state, 'dmg', `  ${dmg.detail} → ${dmg.total}`);
+      dealDamage(state, u, t, dmg.total, 'piercing', { phys: true });
+      if (u.spec.rider && !t.dead && !t.downed && !savingThrow(state, t, u.spec.rider.save, SAVE_DC, 'prone')){
+        addStatus(state, t, { ...u.spec.rider.status }, u);
+        L(state, 'save', `  ${t.name} is knocked ${STATUS_LABEL[u.spec.rider.status.id]}!`);
+      }
+    }
+  }
+  u.acted = true;
+  tickEndOfTurn(state, u);
+}
+
+/* ---------- the auto-battler AI (role-driven, per Part 4) ---------- */
+function roleWeight(u, role){
+  let w = 0;
+  for (const r of u.char.roles) if (r.role === role) w = Math.max(w, r.w);
+  return w;
+}
+function memReady(state, u){
+  return u.char.memorized.filter(k => k.ab.kind !== 'reaction' && abilityReady(state, u, k));
+}
+function nearestEnemy(state, u){
+  return enemiesOf(state, u).sort((a, b) => dist(a, u) - dist(b, u))[0];
+}
+function pickAttackTarget(state, u){
+  // strikers/assassins: lowest HP; assassins prefer targets engaged by allies
+  if (roleWeight(u, 'assassin')){
+    const engaged = enemiesOf(state, u).filter(t => alliesOf(state, u).some(a => dist(a, t) === 0));
+    if (engaged.length) return engaged.sort((a, b) => a.hp - b.hp)[0];
+  }
+  if (roleWeight(u, 'assassin') || roleWeight(u, 'striker') || roleWeight(u, 'ranged'))
+    return lowestHpEnemy(state, u);
+  if (roleWeight(u, 'tank') || roleWeight(u, 'bruiser') || roleWeight(u, 'duelist') || roleWeight(u, 'leader'))
+    return biggestThreat(state, u);
+  return lowestHpEnemy(state, u);
+}
+function isMeleeish(u){
+  return ['duelist','bruiser','tank','assassin','shapeshifter','drain','leader'].some(r => roleWeight(u, r)) ||
+    (roleWeight(u, 'striker') && !roleWeight(u, 'ranged'));
+}
+const LOSE_STATUSES = ['frozen','asleep','polymorphed','removed','charmed','rooted','feared','blinded','bloodlust','taunted','marked','crippled','distracted'];
+
+function tryCastWithRange(state, u, k, target, reserve){
+  const ab = k.ab;
+  if (u.ap - reserve < ab.ap && !ab.spike) return false;
+  if (ab.melee){
+    let tgt = target && dist(u, target) === 0 ? target :
+      enemiesOf(state, u).filter(e => dist(e, u) === 0).sort((a, b) => a.hp - b.hp)[0];
+    if (!tgt){
+      const near = target || nearestEnemy(state, u);
+      if (!near) return false;
+      const steps = dist(u, near);
+      const spare = u.ap - reserve - ab.ap;
+      if (spare < moveCost(state, u, Math.min(steps, 1))) return false;
+      const before = u.pos;
+      const savedAp = u.ap; u.ap = spare; // don't let movement eat the cast budget
+      moveBands(state, u, steps, 1);
+      u.ap = savedAp - (spare - u.ap);
+      if (u.pos === before) return false;
+      if (dist(u, near) > 0) return true;  // spent AP closing in; cast next loop
+      tgt = near;
+    }
+    return castAbility(state, u, k, tgt);
+  }
+  return castAbility(state, u, k, target);
+}
+
+function aiTurn(state, u, reserveRef){
+  const c = u.char;
+  let reserve = reserveRef.reserve;
+
+  /* forced: feared — retreat one band */
+  if (hasStatus(u, 'feared') && u.ap >= 1){
+    L(state, 'save', `${u.name} is Feared — falling back.`);
+    moveBands(state, u, 1, -1);
+  }
+
+  let guard = 0;
+  const tried = new Set();   // don't re-spam a save-or-lose the target just shrugged off
+  while (guard++ < 14 && isActive(u) && !state.over){
+    const apBefore = u.ap;
+    const enemies = enemiesOf(state, u);
+    if (!enemies.length) break;
+
+    /* forced: taunted / bloodlust override targeting */
+    const taunt = getStatus(u, 'taunted');
+    const blust = getStatus(u, 'bloodlust');
+    let forcedTarget = null;
+    if (taunt){ forcedTarget = unitByUid(state, taunt.src); if (!forcedTarget || !isActive(forcedTarget)) forcedTarget = null; }
+    if (blust){
+      const all = state.units.filter(x => isActive(x) && x !== u).sort((a, b) => dist(a, u) - dist(b, u));
+      if (all.length && u.ap - reserve >= 2){
+        const t = all[0];
+        L(state, 'save', `${u.name} sees only red — attacks the nearest creature: ${t.name}!`);
+        while (dist(u, t) > 0 && u.ap - reserve > 2 && !getMods(state, u).noMove){
+          u.pos += (t.pos > u.pos ? 1 : -1);
+          u.ap -= getMods(state, u).moveMult;
+        }
+        if (u.ap - reserve >= 2 && dist(u, t) === 0){ u.ap -= 2; basicAttack(state, u, t); }
+        dropStatus(u, 'bloodlust');
+        continue;
+      }
+    }
+
+    let did = false;
+
+    /* 1. healer: downed first, then <50% allies */
+    if (!did && (roleWeight(u, 'healer') || c.memorized.some(k => isHealAbility(k.ab)))){
+      const down = downedAlly(state, u);
+      const heals = memReady(state, u).filter(k => isHealAbility(k.ab));
+      if (down){
+        const rev = heals.find(k => k.ab.revive || k.ab.key === 'dawnsong');
+        if (rev && u.ap - reserve >= rev.ab.ap) did = castAbility(state, u, rev, down);
+      }
+      if (!did && roleWeight(u, 'healer')){
+        const hurt = woundedAlly(state, u);
+        if (hurt && hurt.hp / hurt.maxHp < 0.5){
+          const h = heals.find(k => k.ab.kind === 'heal' && (!k.ab.adjacent || dist(u, hurt) <= 1));
+          if (h && u.ap - reserve >= h.ab.ap) did = castAbility(state, u, h, hurt);
+        }
+      }
+    }
+
+    /* 2. summoner: keep the yard full (cap 2) */
+    if (!did && roleWeight(u, 'summoner')){
+      const mine = state.units.filter(s => s.isSummon && s.owner === u.uid && !s.dead);
+      if (mine.length < 2){
+        const sk = memReady(state, u).filter(k => k.ab.kind === 'summon' && !k.ab.spike)
+          .sort((a, b) => b.ab.ap - a.ab.ap)[0];
+        if (sk && u.ap - reserve >= sk.ab.ap) did = castAbility(state, u, sk);
+      }
+    }
+
+    /* 3. drain: Offering early, Siphon when 2+ enemies close */
+    if (!did && roleWeight(u, 'drain')){
+      const off = memReady(state, u).find(k => k.ab.key === 'offering');
+      if (off && u.turnCount <= 2 && !hasStatus(u, 'offeringAdv') && u.ap - reserve >= off.ab.ap)
+        did = castAbility(state, u, off);
+      if (!did){
+        const sip = memReady(state, u).find(k => k.ab.key === 'siphon');
+        if (sip && enemies.filter(e => dist(e, u) <= 1).length >= 2 && u.ap - reserve >= sip.ab.ap)
+          did = castAbility(state, u, sip);
+      }
+    }
+
+    /* 4. tank/leader: open with the buff */
+    if (!did && (roleWeight(u, 'tank') || roleWeight(u, 'leader'))){
+      const cry = memReady(state, u).find(k => k.ab.key === 'battleCry');
+      if (cry && state.round <= 2 && u.ap - reserve >= cry.ab.ap) did = castAbility(state, u, cry);
+    }
+
+    /* 5. shapeshifter: get weird early */
+    if (!did && roleWeight(u, 'shapeshifter') && state.round <= 2){
+      const form = memReady(state, u).find(k => ['unstable','embiggen','camouflage'].includes(k.ab.key));
+      if (form && u.ap - reserve >= form.ab.ap &&
+          !hasStatus(u, 'beastForm') && !hasStatus(u, 'embiggened') && !hasStatus(u, 'hidden'))
+        did = castAbility(state, u, form);
+    }
+
+    /* 6. control/debuffer: lead with save-or-lose on the biggest threat */
+    if (!did && (roleWeight(u, 'control') || roleWeight(u, 'debuffer'))){
+      const cc = memReady(state, u).filter(k => k.ab.kind === 'debuff' && k.ab.status &&
+        LOSE_STATUSES.includes(k.ab.status.id)).sort((a, b) => b.ab.lvl - a.ab.lvl)[0];
+      if (cc && u.ap - reserve >= cc.ab.ap){
+        const who = cc.ab.who || 'enemy';
+        if (who === 'enemy'){
+          const threat = enemiesOf(state, u).filter(t => !hasStatus(t, cc.ab.status.id) && !tried.has(cc.ab.key + t.uid))
+            .sort((a, b) => b.dmg - a.dmg || b.hp - a.hp)[0];
+          if (threat){ tried.add(cc.ab.key + threat.uid); did = castAbility(state, u, cc, threat); }
+        } else if (!tried.has(cc.ab.key)){
+          const tgts = groupTargets(state, u, who);
+          if (tgts.length && tgts.some(t => !hasStatus(t, cc.ab.status.id))){ tried.add(cc.ab.key); did = castAbility(state, u, cc); }
+        }
+      }
+    }
+
+    /* 7. blaster: prefer AOE when 2+ enemies share its blast zone */
+    if (!did && roleWeight(u, 'blaster')){
+      const aoes = memReady(state, u).filter(k => k.ab.kind === 'saveDmg' && k.ab.who !== 'enemy' && !k.ab.spike);
+      for (const k of aoes.sort((a, b) => b.ab.lvl - a.ab.lvl)){
+        if (u.ap - reserve < k.ab.ap) continue;
+        if (groupTargets(state, u, k.ab.who).length >= 2){ did = castAbility(state, u, k); break; }
+      }
+    }
+
+    /* 8. main damage: best memorized damage ability in range */
+    if (!did){
+      const target = forcedTarget || pickAttackTarget(state, u);
+      const dmgs = memReady(state, u).filter(k => isDamageAbility(k.ab) && !k.ab.spike)
+        .sort((a, b) => (b.ab.lvl * 10 - b.ab.ap) - (a.ab.lvl * 10 - a.ab.ap));
+      for (const k of dmgs){
+        if (k.ab.kind === 'saveDmg' && k.ab.who !== 'enemy' && !groupTargets(state, u, k.ab.who).length) continue;
+        if (k.ab.key === 'deadlyCut'){
+          const ok = enemiesOf(state, u).some(t => hasStatus(t, 'dazed') || hasStatus(t, 'distracted'));
+          if (!ok) continue;
+        }
+        if (tryCastWithRange(state, u, k, target, reserve)){ did = true; break; }
+      }
+    }
+
+    /* 9. support leftovers: buffs/debuffs worth 1-2 AP */
+    if (!did){
+      const util = memReady(state, u).filter(k => (k.ab.kind === 'buff' || k.ab.kind === 'debuff') &&
+        u.ap - reserve >= k.ab.ap && !k.ab.spike);
+      for (const k of util){
+        if (k.ab.kind === 'buff'){
+          const sid = k.ab.status && k.ab.status.id;
+          if (k.ab.target === 'self' && sid && hasStatus(u, sid)) continue;
+          if (k.ab.target === 'ally'){
+            const a = alliesOf(state, u).filter(x => !x.isSummon && !(sid && hasStatus(x, sid)))[0];
+            if (!a && !(k.ab.tempHP || k.ab.tempHPDice)) continue;
+            did = castAbility(state, u, k, a || woundedAlly(state, u) || u);
+          } else {
+            did = castAbility(state, u, k);
+          }
+        } else {
+          if (tried.has('u:' + k.ab.key)) continue;
+          const tgts = groupTargets(state, u, k.ab.who);
+          const fresh = tgts.filter(t => !(k.ab.status && hasStatus(t, k.ab.status.id)));
+          if (!fresh.length) continue;
+          tried.add('u:' + k.ab.key);
+          did = castAbility(state, u, k, fresh[0]);
+        }
+        if (did) break;
+      }
+    }
+
+    /* 10. positioning: ranged kite, melee close in */
+    if (!did){
+      const meleeThreat = enemies.find(e => dist(e, u) === 0);
+      if (!isMeleeish(u) && meleeThreat && u.ap - reserve >= 1){
+        did = moveBands(state, u, 1, -1, { disengage: u.ap - reserve >= 2 });
+      } else if (isMeleeish(u)){
+        const t = forcedTarget || pickAttackTarget(state, u);
+        if (t && dist(u, t) > 0 && u.ap - reserve >= 1) did = moveBands(state, u, dist(u, t), 1);
+      }
+    }
+
+    /* 11. spend leftovers on basic attacks (2 AP, stack freely) */
+    if (!did && u.ap - reserve >= 2){
+      const melee = enemies.filter(e => dist(e, u) === 0).sort((a, b) => a.hp - b.hp)[0];
+      const t = forcedTarget && isActive(forcedTarget) ? forcedTarget : (melee || pickAttackTarget(state, u));
+      if (t && !(getStatus(u, 'charmed') && getStatus(u, 'charmed').src === t.uid)){
+        u.ap -= 2;
+        L(state, 'ap', `${u.name} attacks (basic, 2 AP).`);
+        basicAttack(state, u, t);
+        did = true;
+      }
+    }
+
+    if (!did || u.ap === apBefore) break;   // nothing left worth doing
+  }
+}
+
+function takeTurn(state, u){
+  if (u.dead || u.stable) return;
+  u.turnCount++;
+  u.sneakUsed = false;
+
+  // battle-effect durations tick on their owner's turn
+  state.effects = state.effects.filter(e => {
+    if (e.owner !== u.uid) return true;
+    e.turns--;
+    if (e.turns <= 0){ L(state, 'dim', `(${e.id === 'longNight' ? 'The darkness lifts' : 'A lingering effect fades'}.)`); return false; }
+    return true;
+  });
+
+  if (u.downed){ deathSaveTurn(state, u); return; }
+  if (u.isSummon){ summonTurn(state, u); return; }
+
+  startOfTurnDots(state, u);
+  if (u.dead || u.downed) return;
+
+  if (cantAct(u)){
+    const why = hasStatus(u, 'asleep') ? 'asleep' : hasStatus(u, 'polymorphed') ? 'a harmless object' : 'outside reality';
+    L(state, 'dim', `${u.name} is ${why} and skips the turn.`);
+    tickEndOfTurn(state, u);
+    return;
+  }
+
+  /* AP for the turn: 5 + banked (bank cap 2, absolute cap 7) */
+  let ap = AP_BASE + u.bank;
+  const spent = [];
+  if (u.bank > 0) spent.push(`+${u.bank} banked`);
+  u.bank = 0;
+  if (getStatus(u, 'stunned')){ ap -= 2; spent.push('−2 stunned'); dropStatus(u, 'stunned'); }
+  if (hasStatus(u, 'frozen')){ ap -= 2; spent.push('−2 frozen'); }
+  const apd = getStatus(u, 'apDown'); if (apd){ ap -= apd.amt; spent.push(`−${apd.amt} chilled`); dropStatus(u, 'apDown'); }
+  if (getStatus(u, 'apDebt')){ ap -= 2; spent.push('−2 adrenaline crash'); dropStatus(u, 'apDebt'); }
+  if (getStatus(u, 'apBoost')){ ap += 2; spent.push('+2 Dawn'); dropStatus(u, 'apBoost'); }
+  u.ap = Math.max(0, Math.min(AP_MAX, ap));
+  if (u.ap > AP_MAX) violate(state, `${u.name} has ${u.ap} AP (max 7)`);
+  L(state, 'turnhead', `— ${u.name}'s turn (${u.ap} AP${spent.length ? ': 5 ' + spent.join(', ') : ''}) —`);
+
+  if (hasStatus(u, 'prone') && u.ap >= 1){
+    u.ap -= 1; dropStatus(u, 'prone');
+    L(state, 'ap', `${u.name} stands up (1 AP).`);
+  }
+
+  /* Legendary spike logic: cast if affordable now, else telegraph + bank */
+  const reserveRef = { reserve: 0 };
+  let telegraph = false;
+  const spikeK = u.char.memorized.find(k => k.ab.spike);
+  if (spikeK && abilityReady(state, u, spikeK)){
+    const needMelee = !!spikeK.ab.melee || ['whirlwind','thousandHands','sweeping'].includes(spikeK.ab.key);
+    const inRange = !needMelee || enemiesOf(state, u).some(e => dist(e, u) === 0);
+    if (u.ap >= spikeK.ab.ap && state.round > 1 && inRange){
+      castAbility(state, u, spikeK, biggestThreat(state, u));
+    } else if (u.ap >= spikeK.ab.ap && state.round > 1 && needMelee){
+      const t = nearestEnemy(state, u);
+      if (t && u.ap - dist(u, t) >= spikeK.ab.ap){
+        moveBands(state, u, dist(u, t), 1);
+        if (enemiesOf(state, u).some(e => dist(e, u) === 0)) castAbility(state, u, spikeK, biggestThreat(state, u));
+      } else { telegraph = true; }
+    } else {
+      telegraph = true;
+    }
+  }
+  if (telegraph) reserveRef.reserve = 2;
+
+  if (!isMeleeish(u) || roleWeight(u, 'tank')) reserveRef.reserve = Math.max(reserveRef.reserve, roleWeight(u, 'tank') ? 1 : 0);
+  if (u.hp < u.maxHp / 2 && u.char.memorized.some(k => k.ab.kind === 'reaction'))
+    reserveRef.reserve = Math.max(reserveRef.reserve, 1);
+
+  aiTurn(state, u, reserveRef);
+
+  /* bank up to 2 */
+  const banked = Math.min(BANK_CAP, u.ap);
+  if (banked > 0){
+    u.bank = banked;
+    if (telegraph) L(state, 'ap', `${u.name} banks ${banked} AP. Something is coming.`);
+    else L(state, 'ap', `${u.name} banks ${banked} AP.`);
+  }
+  if (u.bank > BANK_CAP) violate(state, `${u.name} banked ${u.bank} AP (cap 2)`);
+  u.ap = 0;
+  tickEndOfTurn(state, u);
+}
+
+function sideDone(state, side){
+  return !state.units.some(u => u.side === side && isActive(u) && !u.isSummon) &&
+         !state.units.some(u => u.side === side && u.downed);
+}
+function sideHasActors(state, side){
+  return state.units.some(u => u.side === side && isActive(u));
+}
+
+function runBattle(partyChars, foeChars, rng){
+  const units = [
+    ...partyChars.map(c => makeUnit(c, 0)),
+    ...foeChars.map(c => makeUnit(c, 1)),
+  ];
+  const state = {
+    rng, round: 0, units, order: [], events: [], effects: [], violations: [],
+    over: false, winner: null, summonSeq: 0,
+  };
+  L(state, 'round', '═══ BATTLE BEGINS ═══');
+  L(state, 'info', `Your party: ${partyChars.map(c => c.displayName).join(', ')}`);
+  L(state, 'info', `They face: ${foeChars.map(c => c.displayName).join(', ')}`);
+
+  // initiative: 1d20 + WIT, once, descending; players win ties
+  for (const u of units){
+    const die = rng.die(20);
+    u.init = die + u.char.attrs.WIT;
+    L(state, 'ap', `Initiative — ${u.name}: d20(${die})${fmtMod(u.char.attrs.WIT)} = ${u.init}`);
+  }
+  state.order = units.slice().sort((a, b) => b.init - a.init || a.side - b.side);
+  L(state, 'info', 'Order: ' + state.order.map(u => u.name).join(' → '));
+  snap(state);
+
+  for (let round = 1; round <= MAX_ROUNDS && !state.over; round++){
+    state.round = round;
+    L(state, 'round', `─── ROUND ${round} ───`);
+    for (const u of state.units) u.reactionUsed = false;   // one reaction per round
+    for (let i = 0; i < state.order.length; i++){
+      const u = state.order[i];
+      takeTurn(state, u);
+      snap(state);
+      const p0 = !sideHasActors(state, 0) && !state.units.some(x => x.side === 0 && x.downed);
+      const p1 = !sideHasActors(state, 1) && !state.units.some(x => x.side === 1 && x.downed);
+      if (p0 || p1){
+        state.over = true;
+        state.winner = p1 && !p0 ? 0 : p0 && !p1 ? 1 : (state.rng.random() < 0.5 ? 0 : 1);
+        break;
+      }
+      // a side that is entirely downed-or-worse with no one able to help also loses
+      if (!sideHasActors(state, 0)){ state.over = true; state.winner = 1; break; }
+      if (!sideHasActors(state, 1)){ state.over = true; state.winner = 0; break; }
+    }
+  }
+  if (!state.over){
+    const hp = s => state.units.filter(u => u.side === s && !u.dead).reduce((t, u) => t + Math.max(0, u.hp), 0);
+    state.winner = hp(0) >= hp(1) ? 0 : 1;
+    L(state, 'round', `The battle drags past ${MAX_ROUNDS} rounds — judges call it on vitality.`);
+  }
+  L(state, 'win', state.winner === 0 ? '◆ VICTORY — your party stands. ◆' : '◆ DEFEAT — the opposition stands. ◆', true);
+
+  /* stats */
+  const real = state.units.filter(u => !u.isSummon);
+  const score = u => u.dmg + u.heal * 1.2 + u.kills * 5;
+  const winners = real.filter(u => u.side === state.winner);
+  const mvp = winners.sort((a, b) => score(b) - score(a))[0];
+  const dmgLead = real.slice().sort((a, b) => b.dmg - a.dmg)[0];
+  const healLead = real.slice().sort((a, b) => b.heal - a.heal)[0];
+  state.stats = {
+    winner: state.winner, mvp: mvp && mvp.name,
+    dmgLead: dmgLead && { name: dmgLead.name, amt: dmgLead.dmg },
+    healLead: healLead && healLead.heal > 0 ? { name: healLead.name, amt: healLead.heal } : null,
+    rows: real.map(u => ({ name: u.name, side: u.side, dmg: u.dmg, heal: u.heal, kills: u.kills,
+      fate: u.dead ? 'dead' : u.stable ? 'stable' : u.downed ? 'downed' : 'standing' })),
+  };
+  state.events.push({ type:'end', stats: state.stats });
+  return state;
+}
+
+/* ============================== UI =================================== */
+const SESSION = {
+  rng: makeRng(''),
+  packs: 0, wins: 0, losses: 0, pity: 0,
+  collection: [], party: [],     // party: array of char ids
+  lastBattle: null,
+};
+
+if (typeof document !== 'undefined' && document.getElementById('app')){
+(function ui(){
+  const $ = id => document.getElementById(id);
+  const views = { pack: $('packview'), col: $('colview'), battle: $('batview') };
+  const tabs = { pack: $('tab-pack'), col: $('tab-col'), battle: $('tab-battle') };
+
+  function show(which){
+    for (const k of Object.keys(views)){
+      views[k].classList.toggle('active', k === which);
+      tabs[k].classList.toggle('active', k === which);
+    }
+    if (which === 'col') renderCollection();
+  }
+  tabs.pack.onclick = () => show('pack');
+  tabs.col.onclick = () => show('col');
+  tabs.battle.onclick = () => show('battle');
+
+  $('seedinput').addEventListener('change', e => {
+    SESSION.rng = makeRng(e.target.value);
+  });
+
+  function updateHeader(){
+    $('h-packs').textContent = SESSION.packs;
+    $('h-wl').textContent = SESSION.wins + '/' + SESSION.losses;
+    $('h-pity').textContent = SESSION.pity;
+  }
+
+  /* ---------- pack opening ---------- */
+  let revealTimer = null, revealQueue = [], revealing = false;
+  function queueReveal(steps){
+    const box = $('reveal');
+    box.innerHTML = ''; box.classList.add('show');
+    $('postreveal').style.display = 'none';
+    revealQueue = steps.slice(); revealing = true;
+    const tick = () => {
+      if (!revealQueue.length){
+        revealing = false;
+        $('postreveal').style.display = 'flex';
+        return;
+      }
+      const s = revealQueue.shift();
+      const el = document.createElement('div');
+      el.className = 'rl ' + (s.cls || '');
+      el.innerHTML = s.html;
+      box.appendChild(el);
+      box.scrollTop = box.scrollHeight;
+      revealTimer = setTimeout(tick, s.delay == null ? 420 : s.delay);
+    };
+    tick();
+  }
+  $('reveal').addEventListener('click', () => {   // click to fast-forward
+    if (!revealing) return;
+    clearTimeout(revealTimer);
+    const box = $('reveal');
+    for (const s of revealQueue){
+      const el = document.createElement('div');
+      el.className = 'rl ' + (s.cls || '');
+      el.style.animation = 'none'; el.style.opacity = 1;
+      el.innerHTML = s.html;
+      box.appendChild(el);
+    }
+    revealQueue = []; revealing = false;
+    $('postreveal').style.display = 'flex';
+  });
+
+  function attrLine(attrs){
+    return ATTRS.map(a => {
+      const v = attrs[a];
+      const c = v > 0 ? 'style="color:var(--green)"' : v < 0 ? 'style="color:var(--red)"' : '';
+      return `${a} <b ${c}>${fmtMod(v)}</b>`;
+    }).join(' · ');
+  }
+
+  function openPack(){
+    const c = generateCharacter(SESSION.rng);
+    SESSION.packs++;
+    SESSION.collection.push(c);
+    if (c.rarity === 'epic' || c.rarity === 'legendary') SESSION.pity = 0;
+    else SESSION.pity++;
+    updateHeader();
+
+    const g = c.gen, rc = 'r-' + c.rarity;
+    const steps = [];
+    steps.push({ html:'You crack the seal. Raw essence spills out, looking for a shape…', cls:'flavor', delay:650 });
+    let ancNote = '';
+    if (c.ancestry === 'Human') ancNote = ` (+1 ${g.humanBonus[0]}, +1 ${g.humanBonus[1]})`;
+    else ancNote = ' (' + Object.entries(ANCESTRIES[c.ancestry].bonuses).map(([a, v]) => `${fmtMod(v)} ${a}`).join(', ') + ')';
+    steps.push({ html:'ANCESTRY', cls:'lab' });
+    steps.push({ html:`<b>${c.ancestry}</b><span class="flavor">${ancNote}</span>`, cls:'big' });
+    steps.push({ html:'BACKGROUND', cls:'lab' });
+    steps.push({ html:`<b>${c.background}</b> <span class="flavor">(+1 ${g.bgAttr} — could have been ${g.bgPair.filter(a => a !== g.bgAttr)[0]})</span>`, cls:'big' });
+    steps.push({ html:'RAW ESSENCE — seven times 2d4 − 5', cls:'lab', delay:550 });
+    g.rollDetails.forEach((dice, i) => {
+      const v = g.values[i];
+      const col = v >= 2 ? 'style="color:var(--gold)"' : v <= -2 ? 'style="color:var(--red)"' : '';
+      steps.push({ html:`roll ${i + 1}: 2d4${fmtDice(dice)} − 5 = <b ${col}>${fmtMod(v)}</b>`, cls:'die', delay:330 });
+    });
+    steps.push({ html:`Roll total: <b>${fmtMod(g.rollTotal)}</b>${g.plus3s >= 2 ? ` · <span style="color:var(--gold)">${g.plus3s} perfect rolls</span>` : ''}`, delay:600 });
+    steps.push({ html:'TREE INVESTMENT — 2 feature points', cls:'lab' });
+    steps.push({ html:c.trees.map(t => `<b style="color:var(--gold)">${t.key} ${t.depth}</b> <span class="flavor">(${TREES[t.key].name})</span>`).join(' / ') +
+      (g.offStat ? ' <span class="flavor">— the essence ignored the stats entirely</span>' : ''), cls:'big' });
+    steps.push({ html:'ATTRIBUTES ASSIGNED', cls:'lab' });
+    steps.push({ html: attrLine(c.attrs), delay:600 });
+    if (g.bonusLog && g.bonusLog.length) steps.push({ html: g.bonusLog.join(' · '), cls:'flavor' });
+    steps.push({ html: RARITY.data[c.rarity].label + (c.rarity === 'legendary' ? ' ✦' : ''), cls:'banner ' + rc, delay:900 });
+    if (g.bonusKnown) steps.push({ html:`Rare bonus: knows <b>${g.bonusKnown.ab.name}</b> beyond its training.`, cls:'flavor' });
+    if (c.rarity === 'legendary'){
+      const spike = TREES[c.trees[0].key].abilities.find(a => a.spike);
+      steps.push({ html:`Signature spike unlocked: <b style="color:var(--gold)">★ ${spike.name}</b>`, delay:600 });
+    }
+    steps.push({ html:`<b class="${rc}" style="font-size:17px">${c.displayName}</b> — <span class="flavor">${c.descriptor}</span>`, cls:'big', delay:600 });
+    steps.push({ html:`HP ${c.maxHp} · DEF ${c.def} · Memory ${c.memoryPool} · ${c.ancestry} ${c.background}`, cls:'' });
+    steps.push({ html:`Quirk: ${c.quirk}`, cls:'flavor' });
+    steps.push({ html:`${c.phrase}`, cls:'flavor', delay:200 });
+    queueReveal(steps);
+  }
+  $('openpack').onclick = openPack;
+  $('openanother').onclick = openPack;
+  $('gocol').onclick = () => show('col');
+
+  /* ---------- collection ---------- */
+  function abilityLi(c, k, memorized){
+    const ab = k.ab;
+    const cls = [];
+    if (!memorized) cls.push('un');
+    if (ab.spike) cls.push('spk');
+    if (ab.kind === 'reaction') cls.push('rx');
+    const cd = ab.cd ? ` CD${ab.cd}` : '';
+    return `<li class="${cls.join(' ')}">${ab.spike ? '★ ' : ''}${ab.name} <span class="cost">${ab.ap}AP/${ab.mem}M${cd}</span>` +
+      `${k.bonus ? ' <span style="color:var(--blue)">(bonus)</span>' : ''}${memorized ? '' : ' — not memorized'}</li>`;
+  }
+  function renderCollection(){
+    const wrap = $('cards');
+    wrap.innerHTML = '';
+    $('colempty').style.display = SESSION.collection.length ? 'none' : 'block';
+    for (const c of SESSION.collection){
+      const card = document.createElement('div');
+      const sel = SESSION.party.includes(c.id);
+      card.className = `card b-${c.rarity}` + (sel ? ' selected' : '');
+      const treesTxt = c.trees.map(t => `${t.key} ${t.depth}`).join(' / ');
+      const attrCells = ATTRS.map(a => `<td class="${c.attrs[a] > 0 ? 'pos' : c.attrs[a] < 0 ? 'neg' : ''}">${fmtMod(c.attrs[a])}</td>`).join('');
+      const memd = c.memorized.map(k => abilityLi(c, k, true)).join('');
+      const unmemd = c.known.filter(k => !c.memorized.includes(k)).map(k => abilityLi(c, k, false)).join('');
+      card.innerHTML = `
+        <span class="rtag r-${c.rarity}">${RARITY.data[c.rarity].label}</span>
+        <h3 class="r-${c.rarity}">${c.displayName}</h3>
+        <div class="sub">${c.ancestry} ${c.background} · roll total ${fmtMod(c.rollTotal)}</div>
+        <div class="trees">${treesTxt} — <span class="desc">${c.descriptor}</span></div>
+        <table class="attrs"><tr>${ATTRS.map(a => `<td class="hd">${a}</td>`).join('')}</tr><tr>${attrCells}</tr></table>
+        <div class="vit">HP <b>${c.maxHp}</b> · DEF <b>${c.def}</b> · Init ${fmtMod(c.init)} · Memory ${c.memUsed}/${c.memoryPool}${c.atkBonus ? ' · +1 all attacks' : ''}</div>
+        ${c.sneakFeature ? '<div class="sub">Tree feature: Sneak Attack (+1d6, free)</div>' : ''}
+        <ul class="abs">${memd}${unmemd}</ul>
+        <div class="quirk">${c.quirk}</div>
+        <div class="phrase">${c.phrase}</div>
+        <div class="cbtns">
+          <button class="act selbtn">${sel ? '✓ IN PARTY' : 'ADD TO PARTY'}</button>
+          <button class="act danger relbtn">RELEASE</button>
+        </div>`;
+      card.querySelector('.selbtn').onclick = () => {
+        if (SESSION.party.includes(c.id)) SESSION.party = SESSION.party.filter(id => id !== c.id);
+        else if (SESSION.party.length < 3) SESSION.party.push(c.id);
+        renderCollection();
+      };
+      card.querySelector('.relbtn').onclick = () => {
+        SESSION.collection = SESSION.collection.filter(x => x.id !== c.id);
+        SESSION.party = SESSION.party.filter(id => id !== c.id);
+        renderCollection();
+      };
+      wrap.appendChild(card);
+    }
+    $('partycount').textContent = `Party: ${SESSION.party.length}/3`;
+    $('tobattle').disabled = SESSION.party.length !== 3;
+  }
+  $('tobattle').onclick = () => show('battle');
+
+  /* ---------- battle playback ---------- */
+  const DIFF_NAMES = { '-3':'Fodder', '-2':'Soft Targets', '-1':'Underdogs', '0':'Even Odds', '1':'Mean Streak', '2':'Cruel', '3':'Brutal' };
+  $('difficulty').oninput = e => { $('diffname').textContent = DIFF_NAMES[e.target.value]; };
+
+  const PB = { events: [], idx: 0, playing: false, timer: null, done: true };
+  function speedVal(){ return parseFloat($('speed').value); }
+
+  function renderRoster(snapUnits){
+    for (const side of [0, 1]){
+      const el = $('roster' + side);
+      el.innerHTML = '';
+      for (const u of snapUnits.filter(x => x.side === side)){
+        const ratio = u.maxHp ? Math.max(0, u.hp) / u.maxHp : 0;
+        const blocks = Math.round(ratio * 10);
+        const cls = u.dead ? 'dead' : u.downed ? 'down' : ratio < 0.3 ? 'crit' : ratio < 0.6 ? 'hurt' : '';
+        const div = document.createElement('div');
+        div.className = 'runit ' + cls + (u.stable ? ' dead' : '');
+        div.innerHTML = `<span class="nm">${u.isSummon ? '✦' : ''}${u.name}</span>` +
+          `<span class="hpbar">${'█'.repeat(blocks)}<span class="lost">${'░'.repeat(10 - blocks)}</span></span>` +
+          `<span class="meta">${Math.max(0, u.hp)}/${u.maxHp}${u.tempHp ? '+' + u.tempHp : ''}` +
+          `${u.bank ? ' ⚡' + u.bank : ''}${u.statuses.length ? ' · ' + u.statuses.slice(0, 3).join(',') : ''}</span>`;
+        el.appendChild(div);
+      }
+    }
+  }
+
+  function processEvent(ev){
+    if (ev.type === 'log'){
+      const p = document.createElement('p');
+      p.className = ev.cls;
+      p.textContent = ev.text;
+      $('log').appendChild(p);
+      $('log').scrollTop = $('log').scrollHeight;
+    } else if (ev.type === 'snapshot'){
+      renderRoster(ev.units);
+    } else if (ev.type === 'end'){
+      const s = ev.stats;
+      if (s.winner === 0) SESSION.wins++; else SESSION.losses++;
+      updateHeader();
+      const es = $('endscreen');
+      es.style.display = 'block';
+      es.innerHTML = `<h3>${s.winner === 0 ? '◆ VICTORY' : '◆ DEFEAT'}</h3>
+        <table>
+          <tr><td>MVP</td><td>${s.mvp || '—'}</td></tr>
+          <tr><td>Damage leader</td><td>${s.dmgLead ? s.dmgLead.name + ' (' + s.dmgLead.amt + ')' : '—'}</td></tr>
+          <tr><td>Healing leader</td><td>${s.healLead ? s.healLead.name + ' (' + s.healLead.amt + ')' : 'nobody healed anything'}</td></tr>
+        </table>
+        <table style="margin-top:6px">${s.rows.map(r =>
+          `<tr><td>${r.side === 0 ? 'ally' : 'enemy'}</td><td>${r.name}</td><td>dmg ${r.dmg}</td><td>heal ${r.heal}</td><td>kills ${r.kills}</td><td>${r.fate}</td></tr>`).join('')}
+        </table>`;
+    }
+  }
+  function pbStep(){
+    if (!PB.playing || PB.idx >= PB.events.length){
+      if (PB.idx >= PB.events.length){ PB.done = true; PB.playing = false; $('playpause').textContent = '▶'; }
+      return;
+    }
+    const sp = speedVal();
+    if (sp === 0){
+      while (PB.idx < PB.events.length) processEvent(PB.events[PB.idx++]);
+      PB.done = true; PB.playing = false; $('playpause').textContent = '▶';
+      return;
+    }
+    const ev = PB.events[PB.idx++];
+    processEvent(ev);
+    const delay = (ev.beat ? 1200 : ev.type === 'log' ? 230 : 10) / sp;
+    PB.timer = setTimeout(pbStep, delay);
+  }
+  $('playpause').onclick = () => {
+    if (PB.done) return;
+    PB.playing = !PB.playing;
+    $('playpause').textContent = PB.playing ? '▮▮' : '▶';
+    if (PB.playing) pbStep(); else clearTimeout(PB.timer);
+  };
+
+  $('startbattle').onclick = () => {
+    if (SESSION.party.length !== 3){
+      $('log').innerHTML = '<p class="dim">You need a party of exactly 3. The Collection awaits.</p>';
+      return;
+    }
+    clearTimeout(PB.timer);
+    const party = SESSION.party.map(id => SESSION.collection.find(c => c.id === id)).filter(Boolean);
+    const bias = parseInt($('difficulty').value, 10);
+    const foes = [0, 1, 2].map(() => generateCharacter(SESSION.rng, { bias }));
+    const result = runBattle(party, foes, SESSION.rng);
+    SESSION.lastBattle = result;
+    if (result.violations.length) console.warn('RULE VIOLATIONS:', result.violations);
+    $('log').innerHTML = '';
+    $('endscreen').style.display = 'none';
+    PB.events = result.events; PB.idx = 0; PB.done = false;
+    PB.playing = true;
+    $('playpause').disabled = false;
+    $('playpause').textContent = '▮▮';
+    pbStep();
+  };
+
+  updateHeader();
+})();
+}
+
+/* =========================== SELF-TEST ===============================
+   Run MythReal.selfTest() from the console. Verifies:
+   (a) rarity distribution vs targets, (b) all 20 trees can appear,
+   (c) AP-economy invariants (engine asserts during battles),
+   (d) memory pools never exceeded. */
+function selfTest(opts = {}){
+  const rng = makeRng(opts.seed || 'selftest-' + (opts.salt || '1'));
+  const report = { ok: true, problems: [] };
+
+  // (a) empirical rarity distribution from raw rolls (fast path)
+  const N = opts.audit || 20000;
+  const counts = { common:0, uncommon:0, rare:0, epic:0, legendary:0 };
+  for (let i = 0; i < N; i++){
+    const vals = [];
+    for (let j = 0; j < 7; j++) vals.push(rng.roll(2, 4).total - 5);
+    counts[rarityFromRolls(vals.reduce((s, v) => s + v, 0), vals)]++;
+  }
+  report.rarityPct = {};
+  for (const r of RARITY.order) report.rarityPct[r] = +(100 * counts[r] / N).toFixed(2);
+  const targets = { common:[40,52], uncommon:[28,40], rare:[10,18], epic:[2.5,6], legendary:[1.5,4] };
+  for (const [r, [lo, hi]] of Object.entries(targets)){
+    if (report.rarityPct[r] < lo || report.rarityPct[r] > hi){
+      report.ok = false;
+      report.problems.push(`rarity ${r} at ${report.rarityPct[r]}% (target ${lo}–${hi}%)`);
+    }
+  }
+
+  // 30 packs: memory pools + (b) tree coverage sampling
+  const treesSeen = new Set();
+  const packs = [];
+  for (let i = 0; i < 30; i++){
+    const c = generateCharacter(rng);
+    packs.push(c);
+    for (const t of c.trees) treesSeen.add(t.key);
+    if (c.memUsed > c.memoryPool){ report.ok = false; report.problems.push(`${c.name}: memory ${c.memUsed}/${c.memoryPool}`); }
+    if (!c.memorized.length){ report.ok = false; report.problems.push(`${c.name}: nothing memorized`); }
+    if (!c.memorized.some(k => isDamageAbility(k.ab) || isHealAbility(k.ab)))
+      report.problems.push(`note: ${c.name} memorized no damage/heal (trees ${c.trees.map(t => t.key).join('/')})`);
+  }
+  // (b) keep opening until all 20 trees appear (cap 600)
+  let extra = 0;
+  while (treesSeen.size < 20 && extra < 600){
+    const c = generateCharacter(rng);
+    for (const t of c.trees) treesSeen.add(t.key);
+    extra++;
+  }
+  report.treesSeen = treesSeen.size;
+  report.packsForAllTrees = 30 + extra;
+  if (treesSeen.size < 20){ report.ok = false; report.problems.push(`only ${treesSeen.size}/20 trees appeared in ${30 + extra} packs`); }
+
+  // (c)+(d) three instant battles, engine-level assertions
+  report.battles = [];
+  for (let b = 0; b < 3; b++){
+    const party = [0, 1, 2].map(() => generateCharacter(rng));
+    const foes = [0, 1, 2].map(() => generateCharacter(rng, { bias: b - 1 }));
+    const st = runBattle(party, foes, rng);
+    report.battles.push({
+      winner: st.winner === 0 ? 'party' : 'foes',
+      rounds: st.round,
+      events: st.events.length,
+      violations: st.violations,
+    });
+    if (st.violations.length){ report.ok = false; report.problems.push(...st.violations); }
+    // sanity: every spike event implies round > 1 (also asserted live)
+  }
+
+  const lines = [
+    'MythReal self-test',
+    `rarity %: ${RARITY.order.map(r => r + ' ' + report.rarityPct[r]).join(' | ')} (n=${N})`,
+    `trees seen: ${report.treesSeen}/20 within ${report.packsForAllTrees} packs`,
+    ...report.battles.map((b, i) => `battle ${i + 1}: ${b.winner} in ${b.rounds} rounds, ${b.events} events, ${b.violations.length} violations`),
+    report.ok ? 'ALL CHECKS PASS' : 'PROBLEMS: ' + report.problems.join(' ; '),
+  ];
+  console.log(lines.join('\n'));
+  report.summary = lines.join('\n');
+  return report;
+}
+
+/* console / test surface */
+globalThis.MythReal = {
+  selfTest, makeRng, generateCharacter, runBattle, rarityFromRolls,
+  TREES, RARITY, ANCESTRIES, BACKGROUNDS, SESSION: typeof SESSION !== 'undefined' ? SESSION : null,
+};
+</script>
+
+<!-- ═════════════ Site footer ═════════════ -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-logo">
+      <img src="/mythreal-logo-small-gold.png" alt="MythReal">
+    </div>
+    <p>
+      <a href="/">Back to MythReal</a> &middot; <a href="/forge/">Build Your Legend</a> &middot; <a href="/#signup">Join the Playtest</a>
+    </p>
+    <p>&copy; 2026 MythReal, Inc. All rights reserved. Raw Essence is an alpha demo.</p>
+  </div>
+</footer>
+
+<!-- Mobile nav toggle for the site nav -->
+<script>
+(function(){
+  var btn = document.getElementById('siteNavToggle');
+  var nav = document.getElementById('siteNavLinks');
+  if (!btn || !nav) return;
+  btn.addEventListener('click', function(){
+    var open = nav.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open);
+  });
+  nav.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){
+      nav.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    });
+  });
+})();
+</script>
+</body>
+</html>
