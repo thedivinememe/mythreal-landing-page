@@ -15,6 +15,7 @@ Live at: [mythreal.co](https://mythreal.co)
 
 - `/` — main landing page (`index.html`)
 - `/forge/` — Build Your Legend character forge (`forge/index.html`)
+- `/auto-battler/` — Raw Essence auto-battler demo (`auto-battler/index.html`)
 - `/.netlify/functions/synthesize` — AI character synthesis endpoint
 
 ## Local development
@@ -78,12 +79,28 @@ The `voice` field on each feature shows in the tooltip as an italic flavor line 
 
 ## Forge build economy
 
-Each character starts with **5 AP** to spend across trees:
-- Tier I (Foundation, depth 1): 1 AP
-- Tier III (Specialty, depth 3): 2 AP (requires Tier I in the same tree)
-- Tier V (Mastery, depth 5): 2 AP (requires Tier III in the same tree)
+Mirrors the Quick-Start v0.5.2 canonical rules. Each tier costs **1 Tech Point**, and your point budget scales with character level:
 
-Full single-tree specialist = all 5 AP in one tree.
-Five-tree generalist = 1 AP each across five trees (foundations only).
+| Level | Tech Points | What's reachable                                              |
+|-------|-------------|---------------------------------------------------------------|
+| 1     | 2           | D1+D3 in one tree (depth 2), OR D1 in two different trees     |
+| 2     | 3           | Full single-tree path D1+D3+D5 (Mastery spike unlocked)       |
+| 3     | 4           | Full tree + one splash D1                                     |
+| 4     | 5           | Full tree + two splash D1s                                    |
+| 5     | 6           | Full tree + three splash D1s                                  |
 
-This is a forge UX simplification of the actual character-creation rules in the Quick-Start, which use tech-tree feature points + level-up progression. See `forge/forge-data.js` header comment for design notes.
+A Level dial in the character sheet section adjusts the budget. Depth 3 requires Depth 1 in the same tree; Depth 5 requires Depth 3. See `forge/forge-data.js` header comment for the data shape.
+
+## Auto-battler (Raw Essence)
+
+`auto-battler/index.html` is the integrated **Raw Essence** prototype: open packs of dice-characters, draft a party of three, run auto-battles. It's a single-file self-contained app, originally developed in `D:\Projects\mythreal-auto-battler`.
+
+The integration keeps the game's full HTML/CSS/JS untouched and bolts a brand layer on top:
+- Override CSS variables remap its cyberpunk palette to the site's gold-on-near-black tokens
+- Cinzel for the H1 wordmark and section headings, Raleway for body, monospace preserved for stat grids and the battle log
+- The site nav header is injected before the game's `<div id="app">`, and a site footer is appended before `</body>`
+
+To pull in a newer version from the source project:
+1. Replace `auto-battler/index.html` with the new file
+2. Re-apply the head/body injections (see existing file as a template)
+3. The brand override `<style>` block at the bottom of the in-file stylesheet should be preserved verbatim — it works against the variable names the game already uses
