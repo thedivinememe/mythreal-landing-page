@@ -91,6 +91,8 @@ Mirrors the Quick-Start v0.5.2 canonical rules. Each tier costs **1 Tech Point**
 
 A Level dial in the character sheet section adjusts the budget. Depth 3 requires Depth 1 in the same tree; Depth 5 requires Depth 3. See `forge/forge-data.js` header comment for the data shape.
 
+In addition to feature points, characters get **one talent pick per level** (separate currency). The forge renders N talent slots equal to character level. Picker shows talents grouped by tree, only from trees the player has invested in, capped by investment depth (D1 → L1 talents only; D3 → L1–L3; D5 → all five tiers). 142 tech-tree talents are extracted from `Talents_and_Features_v9.xlsx` → `forge/forge-talents.js`. Leveling down or refunding tree investments auto-trims excess picks.
+
 ## Auto-battler (Raw Essence)
 
 `auto-battler/index.html` is the integrated **Raw Essence** prototype: open packs of dice-characters, draft a party of three, run auto-battles. It's a single-file self-contained app, originally developed in `D:\Projects\mythreal-auto-battler`.
