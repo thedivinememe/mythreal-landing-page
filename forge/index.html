@@ -534,6 +534,116 @@
       100% { transform: scale(1); color: var(--gold); }
     }
 
+    /* Talents */
+    .talents-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 0.5rem; margin: 0.5rem 0 0.4rem;
+    }
+    .talents-header-label {
+      font-family: var(--font-heading); font-size: 0.65rem;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .talents-count {
+      font-size: 0.72rem; color: var(--gold);
+      letter-spacing: 0.08em;
+    }
+    .talent-slots { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; }
+    .talent-slot {
+      display: flex; align-items: stretch; gap: 0.5rem;
+      background: rgba(13, 13, 13, 0.5);
+      border: 1px solid rgba(197, 165, 90, 0.12);
+      border-radius: 3px; padding: 0.5rem 0.6rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .talent-slot.empty {
+      border-style: dashed;
+      cursor: pointer;
+      justify-content: center; color: var(--text-dim);
+      font-size: 0.75rem; letter-spacing: 0.08em;
+    }
+    .talent-slot.empty:hover { border-color: var(--gold); color: var(--gold); }
+    .talent-slot.empty:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+    .talent-slot.filled { flex-direction: column; gap: 0.2rem; }
+    .talent-slot .ts-top {
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .talent-slot .ts-name {
+      font-family: var(--font-heading); color: var(--gold);
+      font-size: 0.82rem; letter-spacing: 0.02em;
+    }
+    .talent-slot .ts-meta {
+      font-size: 0.7rem; color: var(--text-dim); letter-spacing: 0.05em;
+    }
+    .talent-slot .ts-effect {
+      font-size: 0.76rem; color: var(--text); line-height: 1.55;
+    }
+    .talent-slot .ts-remove {
+      background: transparent; border: none; cursor: pointer;
+      color: var(--text-dim); font-size: 1rem; line-height: 1;
+      padding: 0 0.3rem; transition: color 0.2s;
+    }
+    .talent-slot .ts-remove:hover { color: var(--red); }
+    .talent-slot .ts-remove:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+    /* Talent picker modal — narrower than synth modal */
+    .picker-modal {
+      max-width: 560px;
+    }
+    .picker-group {
+      margin: 1rem 0;
+      border-top: 1px solid rgba(197, 165, 90, 0.12);
+      padding-top: 0.7rem;
+    }
+    .picker-group:first-of-type { border-top: none; margin-top: 0.5rem; padding-top: 0; }
+    .picker-group-title {
+      font-family: var(--font-heading); color: var(--gold);
+      font-size: 0.82rem; letter-spacing: 0.1em;
+      text-transform: uppercase; margin-bottom: 0.5rem;
+    }
+    .picker-group-title .pg-sub {
+      color: var(--text-dim); font-family: var(--font-body);
+      font-size: 0.65rem; letter-spacing: 0.06em; margin-left: 0.5rem;
+    }
+    .picker-talent {
+      display: block; width: 100%; text-align: left;
+      background: rgba(13, 13, 13, 0.5);
+      border: 1px solid rgba(197, 165, 90, 0.1);
+      color: var(--text);
+      padding: 0.55rem 0.7rem; border-radius: 3px;
+      margin-bottom: 0.35rem;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s;
+      font-family: var(--font-body);
+    }
+    .picker-talent:hover:not(:disabled) {
+      border-color: var(--gold); background: var(--gold-dim);
+    }
+    .picker-talent:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+    .picker-talent:disabled {
+      cursor: not-allowed; opacity: 0.4;
+    }
+    .picker-talent .pt-top {
+      display: flex; justify-content: space-between; align-items: baseline;
+      gap: 0.5rem; margin-bottom: 0.15rem;
+    }
+    .picker-talent .pt-name {
+      font-family: var(--font-heading); color: var(--gold);
+      font-size: 0.85rem; letter-spacing: 0.02em;
+    }
+    .picker-talent .pt-level {
+      font-size: 0.68rem; color: var(--text-dim);
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .picker-talent .pt-effect {
+      font-size: 0.76rem; line-height: 1.5;
+    }
+    .picker-empty {
+      text-align: center; padding: 2rem 1rem;
+      color: var(--text-dim); font-style: italic;
+      font-size: 0.85rem; line-height: 1.7;
+    }
+
     .feature-list {
       list-style: none;
     }
@@ -787,6 +897,15 @@
           <div>
             <ul class="feature-list" id="featureList"></ul>
           </div>
+
+          <!-- Talents -->
+          <div>
+            <div class="talents-header">
+              <span class="talents-header-label">Talents</span>
+              <span class="talents-count" id="talentsCount">0 / 1</span>
+            </div>
+            <ul class="talent-slots" id="talentSlots"></ul>
+          </div>
         </div>
 
         <div class="synthesize-bar">
@@ -810,6 +929,7 @@
   </div>
 
   <script src="/forge/forge-data.js"></script>
+  <script src="/forge/forge-talents.js"></script>
   <script>
   (function () {
     'use strict';
@@ -827,7 +947,10 @@
       lastUnlocked: null, // for pop animation
       rolledArray: null, // { STR: 3, COR: -1, ... } — shuffled standard array
       swapPick: null,    // attribute code currently selected for swap, or null
+      talentPicks: [],   // [{ tree, level, name }] — one per character level
     };
+
+    const T = window.FORGE_TALENTS || {};
 
     function handleSwapClick(code) {
       if (!state.rolledArray) return;
@@ -1461,6 +1584,9 @@
         });
       }
 
+      // Talents
+      renderTalents();
+
       // Synth button
       const features = Object.keys(state.invested).length;
       const overBudget = spend > budget;
@@ -1473,6 +1599,179 @@
       else if (features === 0) hint.textContent = 'Unlock at least one Tech Tree feature.';
       else if (overBudget) hint.textContent = `Over budget at L${state.level}. Level up or refund some nodes.`;
       else hint.textContent = 'Ready to forge.';
+    }
+
+    // ─── Talents ───
+    function maxTalentLevelForTree(code) {
+      // Tree invested at depth N → can pick talents up to L N (1→L1, 3→L3, 5→L5)
+      return state.invested[code] || 0;
+    }
+
+    function eligibleTalents() {
+      // Returns array of { tree, treeName, treeCode, level, name, desc, effect, alreadyPicked }
+      const out = [];
+      const pickedKey = (p) => `${p.tree}::${p.name}`;
+      const pickedSet = new Set(state.talentPicks.map(pickedKey));
+      Object.entries(state.invested).forEach(([code]) => {
+        const maxL = maxTalentLevelForTree(code);
+        if (maxL < 1) return;
+        const tree = D.TECH_TREES.find(t => t.code === code);
+        if (!tree) return;
+        const bucket = T[code] || {};
+        for (let lvl = 1; lvl <= maxL; lvl++) {
+          (bucket[lvl] || []).forEach((tal) => {
+            out.push({
+              treeCode: code,
+              treeName: tree.name,
+              level: lvl,
+              name: tal.name,
+              desc: tal.desc,
+              effect: tal.effect,
+              alreadyPicked: pickedSet.has(`${code}::${tal.name}`),
+            });
+          });
+        }
+      });
+      return out;
+    }
+
+    function trimExcessPicks() {
+      // If the player drops below their pick count (e.g. levels down or refunds a tree),
+      // trim the trailing picks that are no longer eligible.
+      const maxPicks = state.level;
+      // First drop picks for trees that no longer have sufficient investment
+      state.talentPicks = state.talentPicks.filter(p =>
+        maxTalentLevelForTree(p.tree) >= p.level
+      );
+      // Then trim to current cap
+      if (state.talentPicks.length > maxPicks) {
+        state.talentPicks = state.talentPicks.slice(0, maxPicks);
+      }
+    }
+
+    function renderTalents() {
+      trimExcessPicks();
+      const slotList = $('talentSlots');
+      const count = $('talentsCount');
+      const maxPicks = state.level;
+      slotList.innerHTML = '';
+      count.textContent = `${state.talentPicks.length} / ${maxPicks}`;
+
+      // Render filled slots first
+      state.talentPicks.forEach((p, i) => {
+        const li = document.createElement('li');
+        li.className = 'talent-slot filled';
+        const fullTal = (T[p.tree] && T[p.tree][p.level] || []).find(x => x.name === p.name);
+        const effect = fullTal ? (fullTal.effect || fullTal.desc || '') : '';
+        li.innerHTML = `
+          <div class="ts-top">
+            <span class="ts-name">${escapeHtml(p.name)}</span>
+            <span class="ts-meta">${escapeHtml(p.tree)} · L${p.level}</span>
+          </div>
+          <div class="ts-effect">${escapeHtml(effect)}</div>
+        `;
+        // Remove button absolutely positioned on the right
+        const remove = document.createElement('button');
+        remove.className = 'ts-remove';
+        remove.setAttribute('type', 'button');
+        remove.setAttribute('aria-label', `Remove talent ${p.name}`);
+        remove.innerHTML = '×';
+        remove.addEventListener('click', () => {
+          state.talentPicks.splice(i, 1);
+          renderSheet();
+        });
+        // Insert remove button into top row
+        li.querySelector('.ts-top').appendChild(remove);
+        slotList.appendChild(li);
+      });
+
+      // Render empty slots up to maxPicks
+      const emptyCount = Math.max(0, maxPicks - state.talentPicks.length);
+      for (let i = 0; i < emptyCount; i++) {
+        const li = document.createElement('li');
+        li.className = 'talent-slot empty';
+        li.setAttribute('role', 'button');
+        li.setAttribute('tabindex', '0');
+        li.textContent = '+ Pick a talent';
+        const open = () => openTalentPicker();
+        li.addEventListener('click', open);
+        li.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+        });
+        slotList.appendChild(li);
+      }
+    }
+
+    function openTalentPicker() {
+      const talents = eligibleTalents();
+      const modal = $('modalBackdrop');
+      const inner = $('modalInner');
+      modal.classList.add('show');
+
+      // Group by tree
+      const groups = {};
+      talents.forEach(t => {
+        if (!groups[t.treeCode]) groups[t.treeCode] = { name: t.treeName, items: [] };
+        groups[t.treeCode].items.push(t);
+      });
+
+      let body;
+      if (Object.keys(groups).length === 0) {
+        body = `<div class="picker-empty">No talents available yet.<br>Invest at least one Tech Point in a tree to unlock its talents.</div>`;
+      } else {
+        body = Object.entries(groups).map(([code, g]) => {
+          const depthLabel = g.items.length ? `up to L${maxTalentLevelForTree(code)}` : '';
+          const items = g.items.map(t => `
+            <button class="picker-talent" type="button"
+                    ${t.alreadyPicked ? 'disabled aria-label="Already picked"' : ''}
+                    data-tree="${escapeHtml(code)}" data-level="${t.level}" data-name="${escapeHtml(t.name)}">
+              <div class="pt-top">
+                <span class="pt-name">${escapeHtml(t.name)}</span>
+                <span class="pt-level">L${t.level}${t.alreadyPicked ? ' · Picked' : ''}</span>
+              </div>
+              <div class="pt-effect">${escapeHtml(t.effect || t.desc || '—')}</div>
+            </button>
+          `).join('');
+          return `
+            <div class="picker-group">
+              <div class="picker-group-title">${escapeHtml(code)} · ${escapeHtml(g.name)} <span class="pg-sub">${depthLabel}</span></div>
+              ${items}
+            </div>
+          `;
+        }).join('');
+      }
+
+      inner.innerHTML = `
+        <h3>Select a Talent</h3>
+        <p class="char-title">Slot ${state.talentPicks.length + 1} of ${state.level}</p>
+        ${body}
+        <div class="modal-actions">
+          <button class="btn-outline" id="pickerCancelBtn">Cancel</button>
+        </div>
+      `;
+
+      // Make the modal narrower for picker
+      const modalEl = document.getElementById('modalContent');
+      modalEl.classList.add('picker-modal');
+
+      $('pickerCancelBtn').addEventListener('click', closePickerModal);
+      inner.querySelectorAll('.picker-talent:not(:disabled)').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.talentPicks.push({
+            tree: btn.dataset.tree,
+            level: parseInt(btn.dataset.level, 10),
+            name: btn.dataset.name,
+          });
+          closePickerModal();
+          renderSheet();
+        });
+      });
+    }
+
+    function closePickerModal() {
+      $('modalBackdrop').classList.remove('show');
+      const modalEl = document.getElementById('modalContent');
+      if (modalEl) modalEl.classList.remove('picker-modal');
     }
 
     // ─── Synthesis ───
@@ -1497,6 +1796,7 @@
         attributes: attrs,
         topAttributes: topAttrs,
         features,
+        talents: state.talentPicks.map(p => ({ tree: p.tree, level: p.level, name: p.name })),
         level: state.level,
       };
     }
@@ -1609,6 +1909,7 @@
       state.lastUnlocked = null;
       state.rolledArray = null;
       state.swapPick = null;
+      state.talentPicks = [];
       document.querySelectorAll('.ancestry-card').forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-checked', 'false'); });
       $('humanBoosts').classList.remove('show');
       const hubText = document.getElementById('hubLevelText');
