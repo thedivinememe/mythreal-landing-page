@@ -46,6 +46,20 @@ header h1 span{color:var(--dim); font-weight:400; letter-spacing:1px; font-size:
   background:var(--panel2); border:1px solid var(--line); color:var(--cyan);
   font-family:inherit; font-size:12px; padding:2px 6px; width:110px;
 }
+#codewrap{ display:inline-flex; align-items:center; gap:6px; }
+#codewrap #h-code{
+  font-family:ui-monospace,'Cascadia Mono','JetBrains Mono',Consolas,monospace;
+  color:var(--gold); letter-spacing:0.04em; user-select:all;
+  max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  display:inline-block; vertical-align:bottom;
+}
+.code-copy{
+  background:transparent; border:1px solid var(--line); color:var(--dim);
+  font-size:11px; line-height:1; padding:2px 5px; cursor:pointer; border-radius:2px;
+  transition:color .2s, border-color .2s, background .2s;
+}
+.code-copy:hover{ color:var(--gold); border-color:var(--gold); }
+.code-copy.copied{ color:var(--green); border-color:var(--green); }
 nav{display:flex; gap:6px; margin-bottom:10px;}
 nav button{
   flex:1; background:var(--panel); color:var(--dim); border:1px solid var(--line);
@@ -498,7 +512,8 @@ button.big{ letter-spacing: 0.18em; }
       <span>Packs: <b id="h-packs">0</b></span>
       <span>W/L: <b id="h-wl">0/0</b></span>
       <span class="pity">Pity (since Epic+): <b id="h-pity">0</b></span>
-      <span id="seedwrap">Seed: <input id="seedinput" placeholder="random" spellcheck="false"></span>
+      <span id="codewrap">Code: <b id="h-code">—</b><button type="button" id="codeBtn" class="code-copy" title="Copy collection code">⧉</button></span>
+      <span id="seedwrap">Seed: <input id="seedinput" placeholder="random or paste seed-N" spellcheck="false"></span>
     </div>
   </header>
   <nav>
@@ -2694,12 +2709,75 @@ if (typeof document !== 'undefined' && document.getElementById('app')){
   tabs.col.onclick = () => show('col');
   tabs.battle.onclick = () => show('battle');
 
+  function currentCode(){
+    return (SESSION.rng && SESSION.rng.seed ? SESSION.rng.seed : '—') + '-' + SESSION.packs;
+  }
+
+  function resetSession(seedStr){
+    SESSION.rng = makeRng(seedStr);
+    SESSION.packs = 0;
+    SESSION.collection = [];
+    SESSION.party = [];
+    SESSION.pity = 0;
+    SESSION.wins = 0;
+    SESSION.losses = 0;
+    SESSION.lastBattle = null;
+  }
+
+  function restoreFromCode(seedStr, count){
+    resetSession(seedStr);
+    // Re-open N packs deterministically — same RNG sequence reproduces the same collection.
+    // We replicate the openPack data path without the reveal animation.
+    for (let i = 0; i < count; i++){
+      const c = generateCharacter(SESSION.rng);
+      SESSION.packs++;
+      SESSION.collection.push(c);
+      if (c.rarity === 'epic' || c.rarity === 'legendary') SESSION.pity = 0;
+      else SESSION.pity++;
+    }
+  }
+
   $('seedinput').addEventListener('change', e => {
-    SESSION.rng = makeRng(e.target.value);
+    const val = String(e.target.value || '').trim();
+    // Parse `<seed>-<digits>` (rightmost split — seed itself may contain dashes)
+    const m = val.match(/^(.*?)-(\d+)$/);
+    if (m && m[1].length > 0){
+      const seed = m[1];
+      const count = Math.min(parseInt(m[2], 10), 500); // safety cap
+      restoreFromCode(seed, count);
+      updateHeader();
+      e.target.value = currentCode();
+      // Surface the rebuilt collection
+      if (typeof renderCollection === 'function') renderCollection();
+      show('col');
+      return;
+    }
+    // Plain seed → new session
+    resetSession(val);
+    updateHeader();
+    e.target.value = SESSION.rng.seed;
+    if (typeof renderCollection === 'function') renderCollection();
+  });
+
+  $('codeBtn').addEventListener('click', async () => {
+    const text = currentCode();
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (_) {
+      // Fallback: select the code span
+      const r = document.createRange(); r.selectNode($('h-code'));
+      window.getSelection().removeAllRanges(); window.getSelection().addRange(r);
+    }
+    const b = $('codeBtn');
+    b.classList.add('copied');
+    const prev = b.textContent;
+    b.textContent = '✓';
+    setTimeout(() => { b.classList.remove('copied'); b.textContent = prev; }, 1200);
   });
 
   function updateHeader(){
     $('h-packs').textContent = SESSION.packs;
+    $('h-code').textContent = currentCode();
     $('h-wl').textContent = SESSION.wins + '/' + SESSION.losses;
     $('h-pity').textContent = SESSION.pity;
   }
