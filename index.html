@@ -227,10 +227,36 @@
       background: linear-gradient(180deg, var(--bg-dark) 0%, rgba(27, 58, 92, 0.12) 50%, var(--bg-dark) 100%);
     }
     .world-text {
-      max-width: 780px; margin: 0 auto 3rem; text-align: center;
+      max-width: 780px; margin: 0 auto 2rem; text-align: center;
       font-size: clamp(0.9rem, 2vw, 1.05rem); line-height: 1.9;
       font-style: italic; color: var(--text);
     }
+    .world-media {
+      display: grid; grid-template-columns: 1fr; gap: 1.25rem;
+      margin: 0 auto 2.5rem; max-width: 1000px;
+    }
+    @media (min-width: 900px) {
+      .world-media { grid-template-columns: 2fr 1fr; align-items: stretch; }
+    }
+    .world-media-frame {
+      position: relative; border: 1px solid rgba(197, 165, 90, 0.18);
+      border-radius: 4px; overflow: hidden;
+      background: rgba(13, 13, 13, 0.4);
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.4);
+    }
+    .world-media-frame img {
+      display: block; width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .world-media-frame .caption {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 0.6rem 0.85rem;
+      background: linear-gradient(180deg, transparent 0%, rgba(13, 13, 13, 0.85) 100%);
+      font-family: var(--font-heading); font-size: 0.72rem;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--gold);
+    }
+    .world-media-frame.tall { min-height: 220px; }
     .ancestry-grid {
       display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem;
     }
@@ -249,6 +275,65 @@
     }
     .ancestry-badge h4 { font-size: 0.95rem; margin-bottom: 0.4rem; color: var(--gold); }
     .ancestry-badge p { font-size: 0.78rem; line-height: 1.6; }
+
+    /* ── Inside the Alpha Section ── */
+    .alpha-section {
+      background:
+        linear-gradient(180deg, var(--bg-dark) 0%, rgba(13, 13, 13, 0.4) 50%, var(--bg-dark) 100%),
+        radial-gradient(circle at 50% 40%, rgba(197, 165, 90, 0.04) 0%, transparent 60%);
+    }
+    .alpha-sub {
+      max-width: 700px; margin: 0 auto 2.5rem; text-align: center;
+      font-size: clamp(0.9rem, 2vw, 1.02rem); line-height: 1.85;
+      color: var(--text);
+    }
+    .alpha-grid {
+      display: grid; grid-template-columns: 1fr; gap: 1.25rem;
+      max-width: 1100px; margin: 0 auto;
+    }
+    @media (min-width: 768px) {
+      .alpha-grid {
+        grid-template-columns: 1.4fr 1fr;
+        grid-template-rows: auto auto;
+      }
+      .alpha-tile.feature { grid-row: span 2; }
+    }
+    .alpha-tile {
+      position: relative; border: 1px solid rgba(197, 165, 90, 0.18);
+      border-radius: 4px; overflow: hidden;
+      background: rgba(13, 13, 13, 0.5);
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+      min-height: 240px;
+    }
+    .alpha-tile:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(197, 165, 90, 0.18);
+    }
+    .alpha-tile img {
+      display: block; width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .alpha-tile .alpha-caption {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 0.85rem 1rem 1rem;
+      background: linear-gradient(180deg, transparent 0%, rgba(13, 13, 13, 0.92) 60%);
+    }
+    .alpha-tile .alpha-caption .label {
+      font-family: var(--font-heading); font-size: 0.7rem;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 0.15rem;
+    }
+    .alpha-tile .alpha-caption .blurb {
+      font-size: 0.82rem; color: var(--text); line-height: 1.55;
+    }
+    .alpha-cta {
+      text-align: center; margin-top: 2.5rem;
+    }
+    .alpha-cta .btn-cta { padding: 0.85rem 1.8rem; font-size: 0.82rem; }
+    .alpha-cta .hint {
+      font-size: 0.75rem; color: var(--text-dim, rgba(232, 224, 208, 0.55));
+      margin-top: 0.7rem; letter-spacing: 0.05em;
+    }
 
     /* ── Stats ── */
     .stats-row {
@@ -332,6 +417,7 @@
         <li role="none"><a href="#about" role="menuitem">About</a></li>
         <li role="none"><a href="#features" role="menuitem">Features</a></li>
         <li role="none"><a href="#world" role="menuitem">The World</a></li>
+        <li role="none"><a href="#alpha" role="menuitem">Alpha</a></li>
         <li role="none"><a href="/forge/" role="menuitem">Build Your Legend</a></li>
         <li role="none"><a href="/auto-battler/" role="menuitem">Play</a></li>
         <li role="none"><a href="#signup" role="menuitem">Join</a></li>
@@ -425,6 +511,16 @@
           <h2>The World of Raefund</h2>
         </div>
         <p class="world-text fade-in">For thousands of years, Dragonkind ruled from above. The Elder Dragons led their clans with iron will and ancient magic. But when the Elders began to die, the oppressed Unter races — humans, elves, orcs — seized their chance. Now the continent of Elderlind stands divided: the New Unter Alliance in the West, the remnants of Dragonkind in the East, and a mystery that could unite or destroy them all.</p>
+        <div class="world-media fade-in">
+          <figure class="world-media-frame">
+            <img src="raefund-map.webp" alt="Hand-drawn parchment map of Raefund, showing Newderland in the west, Elderlind in the east, Opalwood Forest, Painted Lake, Imanok's Pass, and Teamint Valley." width="1024" height="768" loading="lazy">
+            <figcaption class="caption">Raefund · The Known Continent</figcaption>
+          </figure>
+          <figure class="world-media-frame tall">
+            <img src="dragon-anatomy.webp" alt="Renaissance-style anatomical codex illustration of a dragon, drawn in faded inks on aged parchment." width="900" height="1200" loading="lazy">
+            <figcaption class="caption">Codex of the Wyrm</figcaption>
+          </figure>
+        </div>
         <div class="ancestry-grid">
           <div class="ancestry-badge fade-in">
             <div class="ancestry-icon" aria-hidden="true">
@@ -471,6 +567,44 @@
             <h4>Drake</h4>
             <p>Draconic heritage. Bonuses to Strength and Wits.</p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inside the Alpha -->
+    <section class="section-padding alpha-section" id="alpha">
+      <div class="container">
+        <div class="section-heading fade-in">
+          <div class="heading-rule"><div class="diamond"></div></div>
+          <h2>Inside the Alpha</h2>
+        </div>
+        <p class="alpha-sub fade-in"><em>Weekend at Burny's</em> is MythReal's official starter adventure — a 2–4 hour playable scenario set in the Teamint Valley, with characters, locations, and the system's first official villain. Glimpses below.</p>
+        <div class="alpha-grid">
+          <figure class="alpha-tile feature fade-in">
+            <img src="burnys-chamber.webp" alt="Cavernous stone throne chamber dominated by a colossal carved dragon's head, three small robed figures standing before it." width="1200" height="675" loading="lazy">
+            <figcaption class="alpha-caption">
+              <div class="label">Burny's Throne Chamber</div>
+              <div class="blurb">Where an Elder Dragon's reign begins — and may end — over a single weekend.</div>
+            </figcaption>
+          </figure>
+          <figure class="alpha-tile fade-in">
+            <img src="teaminton-map.webp" alt="Illustrated overhead view of the village of Teaminton — small hobbit-style burrow homes, garden plots, and a winding stream." width="1024" height="576" loading="lazy">
+            <figcaption class="alpha-caption">
+              <div class="label">Teaminton Village</div>
+              <div class="blurb">A quiet farming hamlet in Teamint Valley. The party's first stop. The dragon's first target.</div>
+            </figcaption>
+          </figure>
+          <figure class="alpha-tile fade-in">
+            <img src="blob-marley.webp" alt="A translucent yellow slime creature with long brown dreadlocks, holding an ornate vintage microphone, surrounded by gold artifacts." width="600" height="750" loading="lazy">
+            <figcaption class="alpha-caption">
+              <div class="label">Blob Marley</div>
+              <div class="blurb">A slime bard with a discography and opinions. Friend, foil, or fight — depends on the table.</div>
+            </figcaption>
+          </figure>
+        </div>
+        <div class="alpha-cta fade-in">
+          <a href="Weekend_at_Burnys_v2_3.pdf" class="btn-cta" download>Download Weekend at Burny's</a>
+          <p class="hint">Free alpha · runs with the Quick-Start Rules · pregens included</p>
         </div>
       </div>
     </section>
